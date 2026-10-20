@@ -1,0 +1,11 @@
+{
+  "stem": {
+    "width": 6.4,
+    "color": "#2d3550"
+  },
+  "veins": {
+    "show": true,
+    "width": 4.6,
+    "color": "#2d3550"
+  }
+}

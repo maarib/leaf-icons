@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="leaf leaf-larches">
+  <path class="stem-fill" fill="#2d3550" d="M43.5 61a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0 -13 0Z"/>
+  <g class="needles" fill="none" stroke="#d99a2b" stroke-linecap="round">
+    <path stroke-width="5.6" d="M50 60Q31.9 54.87 21.81 49.74"/>
+    <path stroke-width="5.6" d="M50 60Q33.37 50.94 23.14 41.88"/>
+    <path stroke-width="5.6" d="M50 60Q35.96 47.07 26.71 34.14"/>
+    <path stroke-width="5.6" d="M50 60Q39.67 43.58 32.54 27.15"/>
+    <path stroke-width="5.6" d="M50 60Q44.41 40.79 40.42 21.58"/>
+    <path stroke-width="5.6" d="M50 60Q50 39 50 18"/>
+    <path stroke-width="5.6" d="M50 60Q55.59 40.79 59.58 21.58"/>
+    <path stroke-width="5.6" d="M50 60Q60.33 43.58 67.46 27.15"/>
+    <path stroke-width="5.6" d="M50 60Q64.04 47.07 73.29 34.14"/>
+    <path stroke-width="5.6" d="M50 60Q66.63 50.94 76.86 41.88"/>
+    <path stroke-width="5.6" d="M50 60Q68.1 54.87 78.19 49.74"/>
+  </g>
+  <g class="stems" fill="none" stroke="#2d3550" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="6.4" d="M54 95Q50 89 50 79L50 62"/>
+  </g>
+</svg>

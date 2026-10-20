@@ -1,0 +1,11 @@
+{
+  "name": "leaf-icons",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}
