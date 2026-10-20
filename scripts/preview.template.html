@@ -5,16 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Leaf Icons</title>
   <style>
+    /* Controls panel over a grid of icon cards; warm paper neutrals from canopy's icon sheet. */
     :root {
       --bg: #f6f3ee; --panel: #fffdf9; --text: #2b2724; --muted: #6f625a; --line: #e4ddd3;
       --stem-width: 6.4; --stem-color: #2d3550;
       --vein-width: 4.6; --vein-color: #2d3550; --vein-display: inline;
       --size: 96px;
     }
-    :root[data-bg="dark"] { --bg: #1d1b19; --panel: #262320; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { --bg: #1d1b19; --panel: #262320; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530; color-scheme: dark; }
+    }
+    :root[data-theme="dark"] { --bg: #1d1b19; --panel: #262320; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530; color-scheme: dark; }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
-    main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    main { max-width: 1100px; margin: 0 auto; padding-block: 24px 48px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     h1 { font-size: 20px; margin: 0 0 4px; }
     p { margin: 0 0 20px; color: var(--muted); }
     .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px;
@@ -108,12 +114,18 @@
     $('vein-color').oninput = (e) => { config.veins.color = e.target.value; render() }
     $('vein-match').onchange = (e) => { if (e.target.checked) config.veins.color = config.stem.color; render() }
     $('size').oninput = (e) => { rootStyle.setProperty('--size', e.target.value + 'px'); $('size').nextElementSibling.value = e.target.value }
-    $('dark').onchange = (e) => { document.documentElement.dataset.bg = e.target.checked ? 'dark' : '' }
+    $('dark').checked = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches
+    $('dark').onchange = (e) => { document.documentElement.dataset.theme = e.target.checked ? 'dark' : 'light' }
     $('reset').onclick = load
     $('copy').onclick = async () => {
       const text = JSON.stringify(config, null, 2) + '\n'
       try { await navigator.clipboard.writeText(text); $('copy').textContent = 'Copied' }
-      catch { $('copy').textContent = 'Copy failed: use the text below' }
+      catch {
+        getSelection().selectAllChildren($('json'))
+        $('copy').textContent = 'Selected below: press Ctrl+C / ⌘C'
+      }
       setTimeout(() => ($('copy').textContent = 'Copy settings'), 1500)
     }
 
