@@ -58,12 +58,10 @@
     "birches": {
       "stem": {
         "width": 4.2,
-        "color": "#522e33",
         "length": -8,
         "midrib": -7.5
       },
       "veins": {
-        "color": "#522e33",
         "length": 0.61
       }
     },
