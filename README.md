@@ -8,8 +8,6 @@ Thirteen tree-group leaf icons (maples, oaks, birches, …) on a 100×100 grid, 
 
 ## The editor
 
-It's laid out like Figma or Framer.
-
 - **Icons and layers** (left). Pick an icon to zoom to it. Each leaf, leaflet, fruit, needle tuft, vein group and stem is a layer: drag rows to reorder them, or use the eye to hide one.
 - **Canvas** (middle). Every icon is a frame on one canvas. Scroll to pan; ⌘ + scroll or pinch to zoom; hover to outline a shape and click to select it. Right-click a shape for the arrange menu.
 - **Design** (right). Stem width, stalk length (how far it hangs below the leaf), midrib length (how far it runs up the leaf) and color; vein width, length and color. **All icons** changes the shared values; **Only \<icon\>** sets values for the current icon, shown in blue. Drag a field's label to scrub its value, or use ↑ / ↓ (Shift for ×10).
