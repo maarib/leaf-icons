@@ -5,265 +5,244 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Leaf Icon Editor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
   <style>
-    /* A full-bleed canvas of icon cards on a dotted cream ground, with soft rounded panels floating
-       over it and a pill dock at the bottom. Leaf-green accent; the icons bring the autumn color. */
+    /* Design-tool layout: toolbar on top, icons and layers on the left, an infinite canvas of 100×100
+       frames in the middle, properties on the right. Neutral chrome so the leaf colors carry the page. */
     :root {
-      --ground: #f3efe6; --dots: rgba(90, 70, 40, 0.16);
-      --panel: #ffffff; --well: #f6f2eb; --line: #ece5d9; --hover: #f3eee5;
-      --text: #2a2520; --muted: #877c6f; --faint: #c4baac;
-      --accent: #2f9e5b; --accent-soft: #e2f3e8; --accent-ink: #217a44; --on-accent: #ffffff;
-      --paper: #f8f5ef; --grid: rgba(43, 39, 36, 0.06);
-      --lift: 0 10px 30px rgba(70, 50, 20, 0.12), 0 1px 3px rgba(70, 50, 20, 0.08);
-      --font: Figtree, ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --chrome: #ffffff; --canvas: #f2f2f2; --line: #e6e6e6; --hover: #f2f2f2; --field: #f5f5f5;
+      --text: #1e1e1e; --muted: #757575; --faint: #b3b3b3;
+      --accent: #0d99ff; --accent-text: #ffffff; --accent-soft: #e5f4ff; --accent-ink: #007be5;
+      --paper: #f6f3ee; --grid: rgba(43, 39, 36, 0.06); --shadow: 0 2px 14px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.06);
+      --font: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
       --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
-        --ground: #1c1a17; --dots: rgba(255, 240, 220, 0.09);
-        --panel: #2a2723; --well: #34302b; --line: #3c3732; --hover: #38332e;
-        --text: #f3ece2; --muted: #a99e90; --faint: #6c6359;
-        --accent: #4cc27c; --accent-soft: #24402f; --accent-ink: #7fdaa2; --on-accent: #0f2618;
-        --lift: 0 10px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+        --chrome: #2c2c2c; --canvas: #1e1e1e; --line: #3d3d3d; --hover: #383838; --field: #383838;
+        --text: #f5f5f5; --muted: #b3b3b3; --faint: #6b6b6b;
+        --accent: #0c8ce9; --accent-text: #ffffff; --accent-soft: #1f3b52; --accent-ink: #4db3ff;
+        --grid: rgba(43, 39, 36, 0.07); --shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
         color-scheme: dark;
       }
     }
     :root[data-theme="dark"] {
-      --ground: #1c1a17; --dots: rgba(255, 240, 220, 0.09);
-      --panel: #2a2723; --well: #34302b; --line: #3c3732; --hover: #38332e;
-      --text: #f3ece2; --muted: #a99e90; --faint: #6c6359;
-      --accent: #4cc27c; --accent-soft: #24402f; --accent-ink: #7fdaa2; --on-accent: #0f2618;
-      --lift: 0 10px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+      --chrome: #2c2c2c; --canvas: #1e1e1e; --line: #3d3d3d; --hover: #383838; --field: #383838;
+      --text: #f5f5f5; --muted: #b3b3b3; --faint: #6b6b6b;
+      --accent: #0c8ce9; --accent-text: #ffffff; --accent-soft: #1f3b52; --accent-ink: #4db3ff;
+      --grid: rgba(43, 39, 36, 0.07); --shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
       color-scheme: dark;
     }
 
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     html, body { height: 100%; }
-    body { margin: 0; background: var(--ground); color: var(--text); font: 13px/18px var(--font); -webkit-font-smoothing: antialiased; }
+    body { margin: 0; background: var(--chrome); color: var(--text); font: 11px/16px var(--font); -webkit-font-smoothing: antialiased; }
     button, input { font: inherit; color: inherit; }
-    button { background: none; border: 0; padding: 0; cursor: pointer; }
-    button:disabled { cursor: default; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-    svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+    button { background: none; border: 0; padding: 0; cursor: default; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
 
-    .app { position: relative; height: 100%; overflow: hidden; }
-    .stage { position: absolute; inset: 0; }
+    .app { height: 100%; display: grid; grid-template-columns: 240px minmax(0, 1fr) 248px; grid-template-rows: 40px minmax(0, 1fr); }
+
+    /* ── Toolbar ── */
+    .toolbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; padding-inline: 8px 16px; border-bottom: 1px solid var(--line); background: var(--chrome); min-width: 0; }
+    .tb { height: 32px; min-width: 32px; padding: 0 8px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    .tb:hover { background: var(--hover); }
+    .tb[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+    .tb:disabled { color: var(--faint); background: none; }
+    .tb .caret { width: 8px; height: 8px; }
+    .tb-sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+    .title { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+    .title b { color: var(--text); font-weight: 500; }
+    #status { color: var(--muted); white-space: nowrap; }
+    .tb.text { font-weight: 500; }
+    .tb.primary { background: var(--accent); color: var(--accent-text); padding: 0 12px; height: 24px; border-radius: 5px; }
+    .tb.primary:hover { filter: brightness(1.08); }
+
+    /* ── Side panels ── */
+    .panel { background: var(--chrome); min-width: 0; min-height: 0; overflow: auto; }
+    .left { border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .right { border-left: 1px solid var(--line); }
+    .ph { display: flex; align-items: center; justify-content: space-between; height: 40px; padding-inline: 16px 8px; font-weight: 600; }
+    .ph .count { color: var(--muted); font-weight: 400; }
+    .pages { border-bottom: 1px solid var(--line); padding-bottom: 8px; max-height: 45vh; overflow: auto; }
+    .row { height: 32px; display: flex; align-items: center; gap: 8px; padding-inline: 16px 8px; border-radius: 5px; margin-inline: 8px; user-select: none; }
+    .row:hover { background: var(--hover); }
+    .row[aria-current="true"], .row[aria-selected="true"] { background: var(--accent-soft); }
+    .row .thumb { width: 20px; height: 20px; flex: none; padding: 2px; border-radius: 4px; background: var(--paper); }
+    .row .thumb svg { display: block; width: 100%; height: 100%; }
+    .row .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+    .row .kind { color: var(--muted); }
+    .row .eye { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--muted); visibility: hidden; }
+    .row:hover .eye, .row.off .eye { visibility: visible; }
+    .row .eye:hover { background: var(--field); color: var(--text); }
+    .row.off .name, .row.off .kind { color: var(--faint); }
+    .layers { overflow: auto; padding-bottom: 12px; }
+    .layers ol { list-style: none; margin: 0; padding: 0; }
+    .layers li.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+    .layers li.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+    .layers .empty { color: var(--muted); padding: 4px 16px; }
 
     /* ── Canvas ── */
-    .viewport { position: absolute; inset: 0; overflow: hidden; touch-action: none;
-      background-image: radial-gradient(var(--dots) 1.2px, transparent 1.3px); background-size: 22px 22px; }
+    .viewport { position: relative; overflow: hidden; background: var(--canvas); touch-action: none; cursor: default; }
     .viewport.hand { cursor: grab; }
     .viewport.panning { cursor: grabbing; }
     .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
     .frame { position: absolute; width: 100px; height: 100px; }
-    .frame .label { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: calc(8px / var(--z)); padding: calc(2px / var(--z)) calc(8px / var(--z)); border-radius: 999px; font-size: calc(12px / var(--z)); line-height: 1.3; font-weight: 500; color: var(--muted); white-space: nowrap; }
-    .frame.current .label { background: var(--accent); color: var(--on-accent); }
-    .frame .art { position: absolute; inset: 0; border-radius: 12px; background: var(--paper); box-shadow: 0 calc(2px / var(--z)) calc(10px / var(--z)) rgba(70, 50, 20, 0.12); overflow: hidden; }
-    .frame.current .art { box-shadow: 0 0 0 calc(2px / var(--z)) var(--accent), 0 calc(4px / var(--z)) calc(16px / var(--z)) rgba(70, 50, 20, 0.16); }
+    .frame .label { position: absolute; left: 0; bottom: 100%; padding-bottom: calc(4px / var(--z)); font-size: calc(11px / var(--z)); line-height: 1.2; color: var(--muted); white-space: nowrap; transform-origin: 0 100%; }
+    .frame.current .label { color: var(--accent-ink); }
+    .frame .art { position: absolute; inset: 0; background: var(--paper); box-shadow: 0 0 0 calc(1px / var(--z)) rgba(0, 0, 0, 0.06); }
+    .frame.current .art { box-shadow: 0 0 0 calc(1px / var(--z)) var(--accent); }
     .viewport.grid .frame .art { background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 10px 10px; background-position: -0.5px -0.5px; }
     .frame svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-    .art [data-layer] { cursor: pointer; }
-    .viewport.hand .art [data-layer] { cursor: inherit; }
     .frame .overlay { pointer-events: none; }
     .overlay * { fill: none !important; stroke: var(--accent) !important; vector-effect: non-scaling-stroke; }
-    .overlay .hov, .overlay .hov * { stroke-width: 2px !important; stroke-dasharray: 4 3; }
-    .overlay .sel, .overlay .sel * { stroke-width: 1.5px !important; }
-    .overlay .box { stroke-width: 1px !important; stroke-dasharray: 3 3; }
-    .dims { position: absolute; transform: translate(-50%, calc(6px / var(--z))); font-size: calc(11px / var(--z)); line-height: 1.4; padding: 0 calc(6px / var(--z)); border-radius: 999px; background: var(--accent); color: var(--on-accent); white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .overlay .hov, .overlay .hov * { stroke-width: 1.5px !important; }
+    .overlay .sel, .overlay .sel * { stroke-width: 1px !important; }
+    .overlay .box { stroke-width: 1px !important; }
+    .dims { position: absolute; transform: translate(-50%, calc(6px / var(--z))); font-size: calc(10px / var(--z)); line-height: 1.4; padding: 0 calc(4px / var(--z)); border-radius: calc(2px / var(--z)); background: var(--accent); color: var(--accent-text); white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+    .hud { position: absolute; left: 12px; bottom: 12px; color: var(--muted); background: var(--chrome); border-radius: 6px; padding: 4px 8px; box-shadow: var(--shadow); pointer-events: none; }
 
-    /* ── Dock ── */
-    .dock { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 6px; border-radius: 999px; background: var(--panel); box-shadow: var(--lift); max-width: calc(100% - 32px); }
-    .db { height: 36px; min-width: 36px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; color: var(--muted); }
-    .db:hover:not(:disabled) { background: var(--hover); color: var(--text); }
-    .db[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-    .db:disabled { color: var(--faint); }
-    .db.zoom { min-width: 58px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-    .dsep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
-
-    /* ── Floating panels ── */
-    .panel { position: absolute; top: 16px; max-height: calc(100% - 32px); overflow: auto; background: var(--panel); border-radius: 20px; box-shadow: var(--lift); min-width: 0; }
-    .left { left: 16px; width: 252px; }
-    .right { right: 16px; width: 288px; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 16px 16px 8px; }
-    .brand .mark { width: 32px; height: 32px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; flex: none; }
-    .brand b { display: block; font-size: 15px; line-height: 20px; }
-    #status { color: var(--muted); font-size: 12px; }
-    .ph { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 6px; font-weight: 700; font-size: 12px; letter-spacing: 0.02em; color: var(--muted); }
-    .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 12px 4px; }
-    .tile { position: relative; display: grid; justify-items: center; gap: 4px; padding: 6px 2px 4px; border-radius: 14px; font-size: 11.5px; color: var(--muted); }
-    .tile:hover { background: var(--hover); color: var(--text); }
-    .tile .thumb { width: 44px; height: 44px; padding: 5px; border-radius: 12px; background: var(--paper); box-shadow: 0 1px 3px rgba(70, 50, 20, 0.12); transition: transform 120ms ease; }
-    .tile .thumb svg { display: block; width: 100%; height: 100%; }
-    .tile:hover .thumb { transform: translateY(-1px) rotate(-3deg); }
-    .tile[aria-selected="true"] { color: var(--accent-ink); font-weight: 600; }
-    .tile[aria-selected="true"] .thumb { box-shadow: 0 0 0 2px var(--accent); }
-    .tile .name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
-    .tile .badge { position: absolute; top: 4px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel); }
-    .row { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 12px; border-radius: 12px; margin: 0 8px; user-select: none; }
-    .row:hover { background: var(--hover); }
-    .row[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
-    .row .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .row .eye { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--muted); opacity: 0; }
-    .row:hover .eye, .row.off .eye, .row .eye:focus-visible { opacity: 1; }
-    .row .eye:hover { background: var(--panel); color: var(--text); }
-    .row.off .name, .row.off > .i { opacity: 0.45; }
-    .layers ol { list-style: none; margin: 0; padding: 0 0 8px; }
-    .layers li.drop-before { box-shadow: inset 0 3px 0 -1px var(--accent); }
-    .layers li.drop-after { box-shadow: inset 0 -3px 0 -1px var(--accent); }
-    .tip { color: var(--faint); font-size: 12px; padding: 4px 20px 16px; margin: 0; }
-
-    .rh { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; }
-    .pills { flex: 1; display: grid; grid-template-columns: 1fr 1fr; background: var(--well); border-radius: 999px; padding: 3px; }
-    .pills button { height: 30px; border-radius: 999px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
-    .pills button[aria-pressed="true"], .pills button[aria-selected="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(70, 50, 20, 0.14); }
-    .go { height: 36px; padding: 0 16px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
-    .go:hover { filter: brightness(1.06); }
-    section.s { padding: 10px 16px 14px; display: grid; gap: 10px; border-top: 1px solid var(--line); }
-    .sh { display: flex; align-items: center; justify-content: space-between; min-height: 28px; font-weight: 700; }
+    /* ── Properties ── */
+    .tabs { display: flex; gap: 4px; height: 40px; align-items: center; padding-inline: 8px; border-bottom: 1px solid var(--line); }
+    .tab { height: 24px; padding: 0 8px; border-radius: 5px; font-weight: 600; color: var(--muted); }
+    .tab:hover { color: var(--text); }
+    .tab[aria-selected="true"] { color: var(--text); background: var(--hover); }
+    section.s { border-bottom: 1px solid var(--line); padding: 8px 16px 12px; display: grid; gap: 8px; }
+    .sh { display: flex; align-items: center; justify-content: space-between; height: 24px; font-weight: 600; }
     .sh .acts { display: flex; gap: 2px; }
-    .ib { width: 30px; height: 30px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
-    .ib:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+    .ib { width: 24px; height: 24px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+    .ib:hover { background: var(--hover); color: var(--text); }
     .ib[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); }
-    .ib:disabled { color: var(--faint); }
-    .note { color: var(--muted); margin: 0; font-size: 12px; }
-    .field { display: grid; grid-template-columns: 56px minmax(0, 1fr) 54px; align-items: center; gap: 8px; }
-    .field .fl { color: var(--muted); cursor: ew-resize; user-select: none; white-space: nowrap; }
-    .field.own .fl, .field.own .num { color: var(--accent-ink); font-weight: 600; }
+    .ib:disabled { color: var(--faint); background: none; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--field); border-radius: 5px; padding: 2px; }
+    .seg button { height: 24px; border-radius: 4px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+    .seg button[aria-pressed="true"] { background: var(--chrome); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+    .note { color: var(--muted); margin: 0; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field { height: 28px; display: flex; align-items: center; background: var(--field); border-radius: 5px; border: 1px solid transparent; min-width: 0; }
+    .field:hover { border-color: var(--line); }
+    .field:focus-within { border-color: var(--accent); }
+    .field .fl { flex: none; padding-left: 8px; color: var(--muted); cursor: ew-resize; user-select: none; min-width: 24px; }
+    .field input { flex: 1; min-width: 0; width: 100%; height: 100%; border: 0; background: none; outline: none; padding: 0 8px 0 6px; font-variant-numeric: tabular-nums; }
+    .field.own input { color: var(--accent-ink); }
     .field.shadowed .fl::after { content: " •"; color: var(--accent-ink); }
-    .field.off { opacity: 0.4; }
-    .num { width: 100%; height: 30px; border: 0; border-radius: 10px; background: var(--well); padding: 0 8px; text-align: right; font-variant-numeric: tabular-nums; outline: none; }
-    .num:focus { box-shadow: 0 0 0 2px var(--accent); }
-    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; height: 18px; background: none; margin: 0; }
-    input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--well) var(--fill, 50%)); }
-    input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--well) var(--fill, 50%)); }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 2px var(--accent), 0 2px 4px rgba(0, 0, 0, 0.15); }
-    input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 2px var(--accent), 0 2px 4px rgba(0, 0, 0, 0.15); }
-    .colors { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .swatch { position: relative; width: 30px; height: 30px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
-    .swatch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .hex { width: 84px; height: 30px; border: 0; border-radius: 10px; background: var(--well); padding: 0 10px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; outline: none; }
-    .hex:focus { box-shadow: 0 0 0 2px var(--accent); }
-    .presets { display: flex; gap: 6px; margin-left: auto; }
-    .presets button { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); transition: transform 100ms ease; }
-    .presets button:hover { transform: scale(1.18); }
-    .presets button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
-    .colors.off { opacity: 0.4; }
-    .linkrow { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
-    .arrange { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .arrange .ib { width: 100%; height: 34px; border-radius: 12px; background: var(--well); }
+    .field.off { opacity: 0.45; }
+    .color { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; align-items: center; }
+    .swatch { position: relative; width: 16px; height: 16px; border-radius: 3px; margin-left: 6px; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); overflow: hidden; }
+    .swatch input { position: absolute; inset: -4px; width: 24px; height: 24px; opacity: 0; cursor: pointer; }
+    .arrange { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .arrange .ib { width: 100%; background: var(--field); }
+    .arrange .ib:hover { background: var(--hover); }
     .layer-meta { display: flex; align-items: center; gap: 8px; }
     .layer-meta .kind { color: var(--muted); }
-    .btn { height: 34px; border-radius: 999px; background: var(--well); padding: 0 14px; font-weight: 600; }
+    .btn { height: 28px; border-radius: 5px; background: var(--field); padding: 0 12px; text-align: center; font-weight: 500; }
     .btn:hover { background: var(--hover); box-shadow: inset 0 0 0 1px var(--line); }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .code pre { margin: 0; font: 11px/16px var(--mono); background: var(--well); border-radius: 12px; padding: 10px; overflow: auto; max-height: 300px; white-space: pre; }
-    details.keys summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; }
-    details.keys summary::after { content: "+"; color: var(--muted); font-weight: 400; }
-    details.keys[open] summary::after { content: "−"; }
-    .keys dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; color: var(--muted); margin: 10px 0 0; font-size: 12px; }
+    .btn.primary { background: var(--accent); color: var(--accent-text); }
+    .btn.primary:hover { filter: brightness(1.08); box-shadow: none; }
+    .stack { display: grid; gap: 8px; }
+    .code { position: relative; }
+    .code pre { margin: 0; font: 11px/16px var(--mono); background: var(--field); border-radius: 5px; padding: 8px; overflow: auto; max-height: 340px; white-space: pre; }
+    .keys { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; color: var(--muted); margin: 0; }
     .keys dt { margin: 0; }
-    .keys dd { margin: 0; color: var(--text); }
-    kbd { font: 600 11px var(--font); background: var(--well); border-radius: 6px; padding: 1px 6px; }
+    .keys dd { margin: 0; color: var(--text); font-family: var(--mono); }
 
     /* ── Menus and toast ── */
-    .menu { position: fixed; z-index: 20; min-width: 220px; background: var(--panel); color: var(--text); border-radius: 16px; padding: 6px; box-shadow: var(--lift); }
-    .menu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 24px; height: 34px; padding: 0 12px; border-radius: 10px; text-align: left; }
-    .menu button:hover:not(:disabled), .menu button:focus-visible { background: var(--accent-soft); color: var(--accent-ink); outline: none; }
-    .menu button:disabled { color: var(--faint); }
-    .menu kbd { color: var(--muted); }
-    .menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 4px; }
-    .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 30; background: var(--text); color: var(--panel); border-radius: 999px; padding: 8px 16px; font-weight: 600; box-shadow: var(--lift); }
+    .menu { position: fixed; z-index: 20; min-width: 200px; background: #1e1e1e; color: #fff; border-radius: 8px; padding: 6px 0; box-shadow: var(--shadow); }
+    .menu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 24px; height: 24px; padding: 0 16px 0 24px; text-align: left; }
+    .menu button:hover:not(:disabled) { background: var(--accent); }
+    .menu button:disabled { color: #777; }
+    .menu kbd { font: inherit; color: #9a9a9a; }
+    .menu button:hover:not(:disabled) kbd { color: #fff; }
+    .menu hr { border: 0; border-top: 1px solid #3a3a3a; margin: 6px 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 30; background: #1e1e1e; color: #fff; border-radius: 6px; padding: 8px 12px; box-shadow: var(--shadow); }
 
-    @media (max-width: 860px) {
+    @media (max-width: 820px) {
       html, body { height: auto; }
-      .app { height: auto; overflow: visible; display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
-      .stage { position: relative; height: 62vh; flex: none; }
-      .panel { position: static; width: auto; max-height: none; margin: 0 12px; }
-      .left { order: 1; }
-      .right { order: 2; }
-      .row .eye { opacity: 1; }
-      .tiles { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+      .app { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: 40px 58vh auto auto; }
+      .toolbar { grid-column: 1; }
+      .title { flex: 1; visibility: hidden; }
+      #status, .tb-sep { display: none; }
+      .toolbar { gap: 2px; padding-inline: 4px 8px; }
+      .left, .right { border: 0; border-top: 1px solid var(--line); overflow: visible; }
+      .pages { max-height: none; }
+      .pages .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
       .hide-narrow { display: none !important; }
-      .toast { bottom: 24px; }
+      .viewport { order: 1; }
+      .left { order: 2; }
+      .right { order: 3; }
+      .row .eye { visibility: visible; }
     }
-    @media (prefers-reduced-motion: no-preference) { .world.glide { transition: transform 200ms cubic-bezier(.2, .8, .3, 1); } }
-    @media (prefers-reduced-motion: reduce) { .tile .thumb, .presets button { transition: none; } }
+    @media (prefers-reduced-motion: no-preference) { .world.glide { transition: transform 180ms ease-out; } }
   </style>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="i-menu" viewBox="0 0 18 18"><path d="M4 6h10M4 9h10M4 12h10"/></symbol>
-    <symbol id="i-move" viewBox="0 0 18 18"><path d="M5 3l9 5.5-4 1 2.3 4.2-1.7.9-2.3-4.2-3.1 2.8z"/></symbol>
-    <symbol id="i-hand" viewBox="0 0 18 18"><path d="M6.5 9V4.5a1 1 0 0 1 2 0V8M8.5 7.5V3.5a1 1 0 0 1 2 0V8M10.5 8V5a1 1 0 0 1 2 0v5c0 3-2 5-4.6 5-1.7 0-2.8-.8-3.8-2.2L2.6 10.4a1 1 0 0 1 1.6-1.2l1.6 1.5"/></symbol>
-    <symbol id="i-undo" viewBox="0 0 18 18"><path d="M6.5 4.5L4 7l2.5 2.5M4 7h7a4 4 0 0 1 0 8H8"/></symbol>
-    <symbol id="i-redo" viewBox="0 0 18 18"><path d="M11.5 4.5L14 7l-2.5 2.5M14 7H7a4 4 0 0 0 0 8h3"/></symbol>
-    <symbol id="i-minus" viewBox="0 0 18 18"><path d="M5 9h8"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 18 18"><path d="M5 9h8M9 5v8"/></symbol>
-    <symbol id="i-eye" viewBox="0 0 18 18"><path d="M2 9s2.8-5 7-5 7 5 7 5-2.8 5-7 5-7-5-7-5z"/><circle cx="9" cy="9" r="2.2"/></symbol>
-    <symbol id="i-eye-off" viewBox="0 0 18 18"><path d="M3 3l12 12M7.4 4.2A6.9 6.9 0 0 1 9 4c4.2 0 7 5 7 5a13 13 0 0 1-2 2.6M11.7 13.5A6.5 6.5 0 0 1 9 14c-4.2 0-7-5-7-5a13.6 13.6 0 0 1 2.8-3.3"/></symbol>
-    <symbol id="i-leaf" viewBox="0 0 18 18"><path d="M4 14c0-6 4-10 10-10 0 6-4 10-10 10zM4 14l5-5"/></symbol>
-    <symbol id="i-stem" viewBox="0 0 18 18"><path d="M10 16c-1-3-1-8 0-13"/></symbol>
-    <symbol id="i-group" viewBox="0 0 18 18"><path d="M9 15V5M9 8l-3.5-2.5M9 8l3.5-2.5M9 11.5l-3.5-2.5M9 11.5l3.5-2.5"/></symbol>
-    <symbol id="i-dot" viewBox="0 0 18 18"><circle cx="9" cy="9" r="4"/></symbol>
-    <symbol id="i-reset" viewBox="0 0 18 18"><path d="M4 9a5 5 0 1 0 1.5-3.6M4 3.5V6h2.5"/></symbol>
-    <symbol id="i-link" viewBox="0 0 18 18"><path d="M7.5 10.5l3-3M8 5.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M10 12.5l-1 1A2.5 2.5 0 0 1 5.5 10l1-1"/></symbol>
-    <symbol id="i-front" viewBox="0 0 18 18"><path d="M9 14V4M5 8l4-4 4 4M4 15h10"/></symbol>
-    <symbol id="i-forward" viewBox="0 0 18 18"><path d="M9 14V5M5.5 8.5L9 5l3.5 3.5"/></symbol>
-    <symbol id="i-backward" viewBox="0 0 18 18"><path d="M9 4v9M5.5 9.5L9 13l3.5-3.5"/></symbol>
-    <symbol id="i-back" viewBox="0 0 18 18"><path d="M9 4v10M5 10l4 4 4-4M4 3h10"/></symbol>
-    <symbol id="i-comment" viewBox="0 0 18 18"><path d="M3.5 4h11v8h-6l-3.5 3v-3H3.5z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 16 16"><path d="M3 5h10M3 8h10M3 11h10"/></symbol>
+    <symbol id="i-move" viewBox="0 0 16 16"><path d="M4 2.5l8.5 5.2-3.7.9 2.1 3.9-1.5.8-2.1-3.9-2.8 2.6z"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 8V4a1 1 0 0 1 2 0v3.5M7.5 7V3a1 1 0 0 1 2 0v4M9.5 7V4a1 1 0 0 1 2 0v5c0 2.8-1.8 4.5-4.2 4.5-1.6 0-2.6-.7-3.5-2L2.4 9.2a1 1 0 0 1 1.6-1.1l1.5 1.4"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 4L3 6.5 5.5 9M3 6.5h6.5a3.5 3.5 0 0 1 0 7H7"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 4L13 6.5 10.5 9M13 6.5H6.5a3.5 3.5 0 0 0 0 7H9"/></symbol>
+    <symbol id="i-caret" viewBox="0 0 8 8"><path d="M1.5 3l2.5 2.5L6.5 3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 16 16"><path d="M2 2l12 12M6.6 3.7A6.3 6.3 0 0 1 8 3.5C12 3.5 14.5 8 14.5 8a12 12 0 0 1-1.9 2.4M10.6 11.9A6 6 0 0 1 8 12.5C4 12.5 1.5 8 1.5 8a12.6 12.6 0 0 1 2.6-3"/></symbol>
+    <symbol id="i-path" viewBox="0 0 16 16"><path d="M3 12.5C4 7 8 4.5 13 3.5"/><rect x="1.5" y="11" width="3" height="3" rx=".5"/><rect x="11.5" y="2" width="3" height="3" rx=".5"/></symbol>
+    <symbol id="i-group" viewBox="0 0 16 16"><path d="M3 5.5V3h2.5M10.5 3H13v2.5M13 10.5V13h-2.5M5.5 13H3v-2.5"/></symbol>
+    <symbol id="i-frame" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2.5v2.5h2.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1A2.5 2.5 0 0 1 4.5 9l1-1"/></symbol>
+    <symbol id="i-front" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4M3 14h10"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 16 16"><path d="M8 13V4M4.5 7.5L8 4l3.5 3.5"/></symbol>
+    <symbol id="i-backward" viewBox="0 0 16 16"><path d="M8 3v9M4.5 8.5L8 12l3.5-3.5"/></symbol>
+    <symbol id="i-back" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4M3 2h10"/></symbol>
+    <symbol id="i-comment" viewBox="0 0 16 16"><path d="M3 3.5h10v7H7l-3 2.5v-2.5H3z"/></symbol>
   </svg>
 
   <div class="app">
-    <main class="stage" aria-label="Canvas">
-      <div class="viewport grid" id="viewport">
-        <div class="world" id="world"></div>
-      </div>
-      <div class="dock" role="toolbar" aria-label="Tools">
-        <button class="db" id="main-menu" type="button" title="Menu" aria-haspopup="menu"><svg class="i"><use href="#i-menu"/></svg></button>
-        <span class="dsep"></span>
-        <button class="db" id="tool-move" type="button" title="Move (V)" aria-pressed="true"><svg class="i"><use href="#i-move"/></svg></button>
-        <button class="db" id="tool-hand" type="button" title="Hand (H, or hold Space)" aria-pressed="false"><svg class="i"><use href="#i-hand"/></svg></button>
-        <span class="dsep"></span>
-        <button class="db" id="undo" type="button" title="Undo (⌘Z)"><svg class="i"><use href="#i-undo"/></svg></button>
-        <button class="db" id="redo" type="button" title="Redo (⇧⌘Z)"><svg class="i"><use href="#i-redo"/></svg></button>
-        <span class="dsep"></span>
-        <button class="db" id="zoom-out" type="button" title="Zoom out (⌘−)"><svg class="i"><use href="#i-minus"/></svg></button>
-        <button class="db zoom" id="zoom" type="button" title="Zoom options" aria-haspopup="menu"><span id="zoom-label">100%</span></button>
-        <button class="db" id="zoom-in" type="button" title="Zoom in (⌘+)"><svg class="i"><use href="#i-plus"/></svg></button>
-        <!-- EXTRA-ACTIONS -->
-      </div>
-    </main>
+    <header class="toolbar">
+      <button class="tb" id="main-menu" type="button" title="Menu" aria-haspopup="menu"><svg class="i"><use href="#i-menu"/></svg></button>
+      <span class="tb-sep"></span>
+      <button class="tb" id="tool-move" type="button" title="Move (V)" aria-pressed="true"><svg class="i"><use href="#i-move"/></svg></button>
+      <button class="tb" id="tool-hand" type="button" title="Hand tool (H, or hold Space)" aria-pressed="false"><svg class="i"><use href="#i-hand"/></svg></button>
+      <span class="tb-sep"></span>
+      <button class="tb" id="undo" type="button" title="Undo (⌘Z)"><svg class="i"><use href="#i-undo"/></svg></button>
+      <button class="tb" id="redo" type="button" title="Redo (⇧⌘Z)"><svg class="i"><use href="#i-redo"/></svg></button>
+      <div class="title"><span class="hide-narrow">Leaf icons / </span><b id="doc-icon"></b></div>
+      <span id="status" aria-live="polite"></span>
+      <!-- EXTRA-ACTIONS -->
+      <button class="tb text" id="zoom" type="button" title="Zoom" aria-haspopup="menu"><span id="zoom-label">100%</span><svg class="i caret"><use href="#i-caret"/></svg></button>
+      <button class="tb primary" id="export-top" type="button" title="Export the current icon as SVG">Export</button>
+    </header>
 
     <aside class="panel left" aria-label="Icons and layers">
-      <div class="brand">
-        <span class="mark"><svg class="i"><use href="#i-leaf"/></svg></span>
-        <div><b>Leaf icons</b><span id="status" aria-live="polite">13 trees, one stem style</span></div>
+      <div class="pages">
+        <div class="ph">Icons <span class="count" id="icon-count"></span></div>
+        <div class="list" id="icon-list" role="listbox" aria-label="Icons"></div>
       </div>
-      <div class="ph">ICONS <span id="icon-count"></span></div>
-      <div class="tiles" id="icon-list" role="listbox" aria-label="Icons"></div>
       <div class="layers">
-        <div class="ph"><span>LAYERS · <span id="doc-icon"></span></span></div>
+        <div class="ph">Layers</div>
         <ol id="layer-list" aria-label="Layers, front to back"></ol>
       </div>
-      <p class="tip hide-narrow">Drag layers to reorder. Scroll to pan, ⌘ + scroll to zoom.</p>
     </aside>
 
+    <main class="viewport grid" id="viewport" aria-label="Canvas">
+      <div class="world" id="world"></div>
+      <div class="hud hide-narrow" id="hud">Scroll to pan · ⌘ + scroll or pinch to zoom · ⇧1 fit all</div>
+    </main>
+
     <aside class="panel right" aria-label="Properties">
-      <div class="rh">
-        <div class="pills" role="tablist">
-          <button id="tab-design" role="tab" type="button" aria-selected="true">Design</button>
-          <button id="tab-code" role="tab" type="button" aria-selected="false">Code</button>
-        </div>
-        <button class="go" id="export-top" type="button" title="Download the current icon as SVG">Export</button>
+      <div class="tabs" role="tablist">
+        <button class="tab" id="tab-design" role="tab" type="button" aria-selected="true">Design</button>
+        <button class="tab" id="tab-code" role="tab" type="button" aria-selected="false">Code</button>
       </div>
 
       <div id="pane-design">
         <section class="s">
-          <div class="pills" role="group" aria-label="Changes apply to">
+          <div class="sh">Apply to</div>
+          <div class="seg" role="group" aria-label="Changes apply to">
             <button id="scope-all" type="button" aria-pressed="true">All icons</button>
             <button id="scope-icon" type="button" aria-pressed="false"></button>
           </div>
@@ -271,9 +250,10 @@
         </section>
 
         <section class="s" id="sec-layer" hidden>
-          <div class="sh"><span class="layer-meta"><svg class="i" id="layer-icon"><use href="#i-leaf"/></svg><span id="layer-name"></span><span class="kind" id="layer-kind"></span></span>
+          <div class="sh"><span>Layer</span>
             <span class="acts"><button class="ib" id="layer-eye" type="button" title="Show or hide (⇧⌘H)"><svg class="i"><use href="#i-eye"/></svg></button></span>
           </div>
+          <div class="layer-meta"><svg class="i" id="layer-icon"><use href="#i-path"/></svg><span id="layer-name"></span><span class="kind" id="layer-kind"></span></div>
           <div class="arrange">
             <button class="ib" id="to-front" type="button" title="Bring to front (])"><svg class="i"><use href="#i-front"/></svg></button>
             <button class="ib" id="forward" type="button" title="Bring forward (⌘])"><svg class="i"><use href="#i-forward"/></svg></button>
@@ -286,10 +266,15 @@
           <div class="sh"><span>Stem</span>
             <span class="acts"><button class="ib" id="reset-stem" type="button" title="Use the shared stem settings"><svg class="i"><use href="#i-reset"/></svg></button></span>
           </div>
-          <div class="field" data-part="stem" data-key="width" title="Stem width"><label class="fl" for="f-stem-width">Width</label><input type="range" aria-label="Stem width slider"><input class="num" id="f-stem-width" inputmode="decimal"></div>
-          <div class="field" data-part="stem" data-key="length" title="Stalk: how far the stem hangs below the leaf"><label class="fl" for="f-stem-length">Stalk</label><input type="range" aria-label="Stalk length slider"><input class="num" id="f-stem-length" inputmode="decimal"></div>
-          <div class="field" data-part="stem" data-key="midrib" title="Midrib: how far the stem runs up the leaf"><label class="fl" for="f-stem-midrib">Midrib</label><input type="range" aria-label="Midrib length slider"><input class="num" id="f-stem-midrib" inputmode="decimal"></div>
-          <div class="colors" data-part="stem" data-kind="color"><span class="swatch"><input type="color" aria-label="Pick stem color"></span><input class="hex" spellcheck="false" aria-label="Stem color hex"><div class="presets"></div></div>
+          <div class="grid2">
+            <label class="field" data-part="stem" data-key="width" title="Stem width"><span class="fl">W</span><input inputmode="decimal" aria-label="Stem width"></label>
+            <label class="field" data-part="stem" data-key="length" title="Stalk length: how far the stem hangs below the leaf"><span class="fl">Stalk</span><input inputmode="decimal" aria-label="Stalk length"></label>
+            <label class="field" data-part="stem" data-key="midrib" title="Midrib length: how far the stem runs up the leaf"><span class="fl">Midrib</span><input inputmode="decimal" aria-label="Midrib length"></label>
+          </div>
+          <div class="color">
+            <label class="field" data-part="stem" data-key="color" data-kind="color" title="Stem color"><span class="swatch"><input type="color" aria-label="Pick stem color"></span><input class="hex" spellcheck="false" aria-label="Stem color hex"></label>
+            <span></span>
+          </div>
         </section>
 
         <section class="s">
@@ -299,34 +284,39 @@
               <button class="ib" id="veins-eye" type="button" title="Show or hide veins"><svg class="i"><use href="#i-eye"/></svg></button>
             </span>
           </div>
-          <div class="field" data-part="veins" data-key="width" title="Vein width"><label class="fl" for="f-veins-width">Width</label><input type="range" aria-label="Vein width slider"><input class="num" id="f-veins-width" inputmode="decimal"></div>
-          <div class="field" data-part="veins" data-key="length" title="Vein length, scaled from the midrib"><label class="fl" for="f-veins-length">Length</label><input type="range" aria-label="Vein length slider"><input class="num" id="f-veins-length" inputmode="decimal"></div>
-          <div class="linkrow"><span>Same color as the stem</span><button class="ib" id="veins-link" type="button" title="Same color as the stem"><svg class="i"><use href="#i-link"/></svg></button></div>
-          <div class="colors" data-part="veins" data-kind="color"><span class="swatch"><input type="color" aria-label="Pick vein color"></span><input class="hex" spellcheck="false" aria-label="Vein color hex"><div class="presets"></div></div>
+          <div class="grid2">
+            <label class="field" data-part="veins" data-key="width" title="Vein width"><span class="fl">W</span><input inputmode="decimal" aria-label="Vein width"></label>
+            <label class="field" data-part="veins" data-key="length" title="Vein length, scaled from the midrib"><span class="fl">Length</span><input inputmode="decimal" aria-label="Vein length"></label>
+          </div>
+          <div class="color">
+            <label class="field" data-part="veins" data-key="color" data-kind="color" title="Vein color"><span class="swatch"><input type="color" aria-label="Pick vein color"></span><input class="hex" spellcheck="false" aria-label="Vein color hex"></label>
+            <button class="ib" id="veins-link" type="button" title="Same color as the stem"><svg class="i"><use href="#i-link"/></svg></button>
+          </div>
         </section>
 
         <section class="s">
-          <div class="grid2">
-            <button class="btn" id="copy-svg" type="button">Copy SVG</button>
-            <button class="btn" id="copy-config" type="button">Copy settings</button>
+          <div class="sh">Export</div>
+          <div class="stack">
+            <button class="btn primary" id="export" type="button">Export SVG</button>
+            <div class="grid2">
+              <button class="btn" id="copy-svg" type="button">Copy SVG</button>
+              <button class="btn" id="copy-config" type="button">Copy settings</button>
+            </div>
           </div>
-          <button class="btn" id="export" type="button" hidden>Export SVG</button>
         </section>
 
         <section class="s hide-narrow">
-          <details class="keys">
-            <summary>Keyboard shortcuts</summary>
-            <dl>
-              <dt>Bring to front / send to back</dt><dd><kbd>]</kbd> <kbd>[</kbd></dd>
-              <dt>Forward / backward</dt><dd><kbd>⌘]</kbd> <kbd>⌘[</kbd></dd>
-              <dt>Hide layer</dt><dd><kbd>⇧⌘H</kbd></dd>
-              <dt>Undo / redo</dt><dd><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd></dd>
-              <dt>Fit all / zoom to icon</dt><dd><kbd>⇧1</kbd> <kbd>⇧2</kbd></dd>
-              <dt>Zoom to 100%</dt><dd><kbd>⇧0</kbd></dd>
-              <dt>Move / hand</dt><dd><kbd>V</kbd> <kbd>H</kbd></dd>
-              <dt>Layout grid</dt><dd><kbd>⇧G</kbd></dd>
-            </dl>
-          </details>
+          <div class="sh">Shortcuts</div>
+          <dl class="keys">
+            <dt>Bring to front / send to back</dt><dd>] [</dd>
+            <dt>Forward / backward</dt><dd>⌘] ⌘[</dd>
+            <dt>Hide layer</dt><dd>⇧⌘H</dd>
+            <dt>Undo / redo</dt><dd>⌘Z ⇧⌘Z</dd>
+            <dt>Fit all / zoom to icon</dt><dd>⇧1 ⇧2</dd>
+            <dt>Zoom to 100%</dt><dd>⇧0</dd>
+            <dt>Move / hand</dt><dd>V H</dd>
+            <dt>Layout grid</dt><dd>⇧G</dd>
+          </dl>
         </section>
       </div>
 
@@ -352,13 +342,11 @@
     const MODELS = /* MODELS */ null
     const DEFAULTS = /* CONFIG */ null
     const LOCAL_KEY = 'leaf-icons-config'
-    const FRAME = 100, GAP = 64, COLS = 5
+    const FRAME = 100, GAP = 56, COLS = 5
     const $ = (id) => document.getElementById(id)
     const clone = (o) => JSON.parse(JSON.stringify(o))
     const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
     const KINDS = { blade: 'Leaf shape', spur: 'Spur', needles: 'Needles', veins: 'Veins', stem: 'Stem' }
-    const ICONS = { blade: 'i-leaf', spur: 'i-dot', needles: 'i-group', veins: 'i-group', stem: 'i-stem' }
-    const PRESETS = ['#2d3550', '#4b3621', '#3f5b2e', '#7a2e2e', '#1e1e1e']
 
     let config = clone(DEFAULTS)
     let current = MODELS[0].id
@@ -474,36 +462,21 @@
       world.classList.toggle('glide', glide)
       world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`
       world.style.setProperty('--z', cam.z)
-      let dot = 22 * cam.z
-      while (dot < 16) dot *= 2
-      while (dot >= 44) dot /= 2
-      viewport.style.backgroundSize = `${dot}px ${dot}px`
-      viewport.style.backgroundPosition = `${cam.x}px ${cam.y}px`
       $('zoom-label').textContent = Math.round(cam.z * 100) + '%'
     }
-    const narrow = matchMedia('(max-width: 860px)')
-    /** The part of the canvas not covered by the floating panels and dock. */
-    function clearArea() {
-      const v = viewport.getBoundingClientRect()
-      if (narrow.matches) return { left: 0, top: 0, width: v.width, height: v.height - 70 }
-      const l = document.querySelector('.panel.left').getBoundingClientRect()
-      const r = document.querySelector('.panel.right').getBoundingClientRect()
-      const left = l.right - v.left + 8, right = v.right - r.left + 8
-      return { left, top: 8, width: Math.max(120, v.width - left - right), height: v.height - 8 - 84 }
-    }
     function fit(rect, glide = true, pad = 0.82) {
-      const a = clearArea()
-      if (!a.width || !a.height) return
-      cam.z = Math.min(32, Math.max(0.1, Math.min(a.width / rect.w, a.height / rect.h) * pad))
-      cam.x = a.left + a.width / 2 - (rect.x + rect.w / 2) * cam.z
-      cam.y = a.top + a.height / 2 - (rect.y + rect.h / 2) * cam.z
+      const v = viewport.getBoundingClientRect()
+      if (!v.width || !v.height) return
+      cam.z = Math.min(32, Math.max(0.1, Math.min(v.width / rect.w, v.height / rect.h) * pad))
+      cam.x = v.width / 2 - (rect.x + rect.w / 2) * cam.z
+      cam.y = v.height / 2 - (rect.y + rect.h / 2) * cam.z
       applyCam(glide)
     }
     const allRect = () => {
       const rows = Math.ceil(MODELS.length / COLS)
-      return { x: -16, y: -16, w: COLS * FRAME + (COLS - 1) * GAP + 32, h: rows * FRAME + (rows - 1) * GAP + 52 }
+      return { x: -20, y: -24, w: COLS * FRAME + (COLS - 1) * GAP + 40, h: rows * FRAME + (rows - 1) * GAP + 44 }
     }
-    const frameRect = (id) => { const p = pos(MODELS.findIndex((m) => m.id === id)); return { x: p.x, y: p.y, w: FRAME, h: FRAME + 26 } }
+    const frameRect = (id) => { const p = pos(MODELS.findIndex((m) => m.id === id)); return { x: p.x, y: p.y - 10, w: FRAME, h: FRAME + 10 } }
     function zoomBy(factor, cx, cy) {
       const v = viewport.getBoundingClientRect()
       cx ??= v.width / 2
@@ -645,14 +618,15 @@
     // ── Panels ──
 
     function iconRow(m) {
-      const b = document.createElement('button')
-      b.type = 'button'
-      b.className = 'tile'
+      const b = document.createElement('div')
+      b.className = 'row'
       b.setAttribute('role', 'option')
+      b.tabIndex = 0
+      b.setAttribute('aria-current', String(m.id === current))
       b.setAttribute('aria-selected', String(m.id === current))
-      b.title = m.id + (hasOwn(m.id) ? ' (has its own settings)' : '')
-      b.innerHTML = `<span class="thumb">${renderSvg(m, config)}</span><span class="name">${m.id}</span>${hasOwn(m.id) ? '<span class="badge"></span>' : ''}`
+      b.innerHTML = `<span class="thumb">${renderSvg(m, config)}</span><span class="name">${m.id}</span>${hasOwn(m.id) ? '<span class="badge" title="Has its own settings"></span>' : ''}`
       b.onclick = () => { current = m.id; selected = null; render(); fit(frameRect(m.id)) }
+      b.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click() } }
       return b
     }
 
@@ -672,7 +646,7 @@
           li.draggable = true
           li.dataset.layer = id
           li.setAttribute('aria-selected', String(id === selected))
-          const icon = ICONS[l.type]
+          const icon = l.type === 'veins' || l.type === 'needles' ? 'i-group' : 'i-path'
           li.innerHTML = `<svg class="i"><use href="#${icon}"/></svg><span class="name">${l.name}</span><button class="eye" type="button" title="${off ? 'Show' : 'Hide'}"><svg class="i"><use href="#${off ? 'i-eye-off' : 'i-eye'}"/></svg></button>`
           li.querySelector('.eye').onclick = (e) => { e.stopPropagation(); toggleHidden(id) }
           li.onclick = () => { selected = id; render() }
@@ -717,7 +691,7 @@
       const i = ids.indexOf(selected)
       $('layer-name').textContent = layer.name
       $('layer-kind').textContent = KINDS[layer.type]
-      $('layer-icon').innerHTML = `<use href="#${ICONS[layer.type]}"/>`
+      $('layer-icon').innerHTML = `<use href="#${layer.type === 'veins' || layer.type === 'needles' ? 'i-group' : 'i-path'}"/>`
       const off = isHidden(current, layer)
       $('layer-eye').innerHTML = `<svg class="i"><use href="#${off ? 'i-eye-off' : 'i-eye'}"/></svg>`
       $('layer-eye').title = (off ? 'Show' : 'Hide') + ' layer (⇧⌘H)'
@@ -729,40 +703,29 @@
     function renderFields() {
       const s = scope === 'all' ? { stem: config.stem, veins: config.veins } : resolve(config, current)
       const mine = config.icons?.[current] ?? {}
-      const mark = (el, part, key) => {
-        el.classList.toggle('own', scope === 'icon' && mine[part]?.[key] !== undefined)
-        const shadowed = scope === 'all' && mine[part]?.[key] !== undefined
-        el.classList.toggle('shadowed', shadowed)
-        el.title = (el.dataset.title ??= el.title) + (shadowed ? ` (${current} has its own value)` : '')
-      }
       for (const field of document.querySelectorAll('.field[data-part]')) {
-        const { part, key } = field.dataset
+        const { part, key, kind } = field.dataset
         const v = s[part][key]
-        const [step, lo, hi] = STEPS[part + '.' + key]
-        const range = field.querySelector('input[type=range]')
-        Object.assign(range, { min: lo, max: hi, step })
-        range.value = v
-        range.style.setProperty('--fill', ((v - lo) / (hi - lo)) * 100 + '%')
-        const num = field.querySelector('.num')
-        if (document.activeElement !== num) num.value = fmt(key, v)
-        mark(field, part, key)
+        if (kind === 'color') {
+          const hex = field.querySelector('.hex')
+          if (document.activeElement !== hex) hex.value = v.replace('#', '').toUpperCase()
+          field.querySelector('.swatch').style.background = v
+          field.querySelector('input[type=color]').value = v
+        } else {
+          const input = field.querySelector('input')
+          if (document.activeElement !== input) input.value = fmt(key, v)
+        }
+        field.classList.toggle('own', scope === 'icon' && mine[part]?.[key] !== undefined)
+        const shadowed = scope === 'all' && mine[part]?.[key] !== undefined
+        field.classList.toggle('shadowed', shadowed)
+        field.title = field.title.split(' (')[0] + (shadowed ? ` (${current} has its own value)` : '')
         if (part === 'veins') field.classList.toggle('off', !s.veins.show)
-      }
-      for (const row of document.querySelectorAll('.colors[data-part]')) {
-        const { part } = row.dataset
-        const v = s[part].color
-        const hex = row.querySelector('.hex')
-        if (document.activeElement !== hex) hex.value = v.replace('#', '')
-        row.querySelector('.swatch').style.background = v
-        row.querySelector('input[type=color]').value = v
-        for (const b of row.querySelectorAll('.presets button')) b.setAttribute('aria-pressed', String(b.dataset.color === v.toLowerCase()))
-        mark(row, part, 'color')
       }
       const veinsOff = !s.veins.show
       $('veins-eye').innerHTML = `<svg class="i"><use href="#${veinsOff ? 'i-eye-off' : 'i-eye'}"/></svg>`
       $('veins-eye').title = veinsOff ? 'Show veins' : 'Hide veins'
       $('veins-link').setAttribute('aria-pressed', String(linked))
-      document.querySelector('.colors[data-part="veins"]').classList.toggle('off', linked || veinsOff)
+      document.querySelector('.field[data-part="veins"][data-key="color"]').classList.toggle('off', linked || veinsOff)
       $('reset-stem').hidden = !(scope === 'icon' && mine.stem)
       $('reset-veins').hidden = !(scope === 'icon' && mine.veins)
       $('scope-all').setAttribute('aria-pressed', String(scope === 'all'))
@@ -816,40 +779,23 @@
       }, 'color:' + part)
     }
 
-    for (const row of document.querySelectorAll('.colors[data-part]')) {
-      const { part } = row.dataset
-      row.querySelector('input[type=color]').addEventListener('input', (e) => setColor(part, e.target.value))
-      const hex = row.querySelector('.hex')
-      const commit = () => {
-        const m = hex.value.trim().replace(/^#/, '').match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i)
-        if (!m) { renderFields(); return }
-        const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
-        setColor(part, '#' + h.toLowerCase())
-      }
-      hex.addEventListener('change', commit)
-      hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); hex.blur() } if (e.key === 'Escape') { renderFields(); hex.blur() } })
-      row.querySelector('.presets').replaceChildren(
-        ...PRESETS.map((c) => {
-          const b = document.createElement('button')
-          b.type = 'button'
-          b.dataset.color = c
-          b.style.background = c
-          b.title = c
-          b.setAttribute('aria-label', (part === 'stem' ? 'Stem' : 'Vein') + ' color ' + c)
-          b.onclick = () => setColor(part, c)
-          return b
-        }),
-      )
-    }
-
     for (const field of document.querySelectorAll('.field[data-part]')) {
-      const { part, key } = field.dataset
-      const input = field.querySelector('.num')
-      const range = field.querySelector('input[type=range]')
+      const { part, key, kind } = field.dataset
+      if (kind === 'color') {
+        field.querySelector('input[type=color]').addEventListener('input', (e) => setColor(part, e.target.value))
+        const hex = field.querySelector('.hex')
+        const commit = () => {
+          const m = hex.value.trim().replace(/^#/, '').match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i)
+          if (!m) { renderFields(); return }
+          const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
+          setColor(part, '#' + h.toLowerCase())
+        }
+        hex.addEventListener('change', commit)
+        hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); hex.blur() } if (e.key === 'Escape') { renderFields(); hex.blur() } })
+        continue
+      }
+      const input = field.querySelector('input')
       const [step] = STEPS[part + '.' + key]
-      let rangeGesture = null
-      range.addEventListener('pointerdown', () => (rangeGesture = 'range:' + part + key + ':' + Date.now()))
-      range.addEventListener('input', () => setNumber(part, key, +range.value, rangeGesture ?? 'range:' + part + key))
       input.addEventListener('change', () => {
         const v = parseFloat(input.value)
         if (Number.isFinite(v)) setNumber(part, key, v)
@@ -897,8 +843,6 @@
     $('forward').onclick = () => arrange(1)
     $('backward').onclick = () => arrange(-1)
     $('to-back').onclick = () => arrange('back')
-    $('zoom-in').onclick = () => zoomBy(1.5)
-    $('zoom-out').onclick = () => zoomBy(1 / 1.5)
     $('tool-move').onclick = () => setTool('move')
     $('tool-hand').onclick = () => setTool('hand')
     $('undo').onclick = undo
@@ -942,7 +886,7 @@
         '-',
         { label: `Reset ${current}`, run: () => mutate(() => { delete config.icons?.[current] }), disabled: !hasOwn(current) },
         { label: resetArmed ? 'Click again to reset everything' : 'Reset all icons', keep: !resetArmed, run: () => {
-          if (!resetArmed) { resetArmed = true; openMenu(mainMenu(), menuAt.x, menuAt.y, menuAt.up); setTimeout(() => (resetArmed = false), 3000); return }
+          if (!resetArmed) { resetArmed = true; openMenu(mainMenu(), menuAt.x, menuAt.y); setTimeout(() => (resetArmed = false), 3000); return }
           resetArmed = false
           mutate(() => { config = clone(DEFAULTS) })
           toast('Reset to the saved defaults')
@@ -961,8 +905,8 @@
     }
     const menu = $('menu')
     let menuAt = { x: 0, y: 0 }
-    function openMenu(items, x, y, up = false) {
-      menuAt = { x, y, up }
+    function openMenu(items, x, y) {
+      menuAt = { x, y }
       menu.replaceChildren(
         ...items.map((it) => {
           if (it === '-') return document.createElement('hr')
@@ -979,11 +923,11 @@
       menu.hidden = false
       const r = menu.getBoundingClientRect()
       menu.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px'
-      menu.style.top = Math.max(8, Math.min(up ? y - r.height : y, innerHeight - r.height - 8)) + 'px'
+      menu.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px'
       menu.querySelector('button:not(:disabled)')?.focus()
     }
     function closeMenu() { menu.hidden = true }
-    const below = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top - 8, true] }
+    const below = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.bottom + 4] }
     $('main-menu').onclick = (e) => { e.stopPropagation(); menu.hidden ? openMenu(mainMenu(), ...below(e.currentTarget)) : closeMenu() }
     $('zoom').onclick = (e) => { e.stopPropagation(); menu.hidden ? openMenu(zoomMenu(), ...below(e.currentTarget)) : closeMenu() }
     document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !menu.contains(e.target) && !e.target.closest('#main-menu, #zoom')) closeMenu() })
@@ -1120,7 +1064,7 @@
 
     render()
     fit(allRect(), false)
-    narrow.addEventListener('change', () => fit(allRect(), false))
+    matchMedia('(max-width: 820px)').addEventListener('change', () => fit(allRect(), false))
     new ResizeObserver(() => { if (!viewport.dataset.fitted) { viewport.dataset.fitted = '1'; fit(allRect(), false) } }).observe(viewport)
     loadLocal()
     connect()
