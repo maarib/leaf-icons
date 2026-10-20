@@ -22,12 +22,18 @@ export const TREE_ICON_IDS = [
 
 export type TreeIconId = (typeof TREE_ICON_IDS)[number]
 
-type Pt = [number, number]
+export type Pt = [number, number]
 type Stroke = { d: string; width: number }
 
-/** Stems (stalks, midribs) and veins. Width is `k` × the part's width in stems.config.json. */
-export type Part = 'stem' | 'vein'
-export type PartStroke = { d: string; part: Part; k?: number }
+// Stems and veins are kept as geometry, not finished paths, so their length can be set in
+// stems.config.json (see src/render.js). Width is `k` × the part's configured width.
+/** Stalk below the leaf curving up into the midrib (see stemInto). */
+export type StemStroke = { part: 'stem'; top: number; foot: number; bend: number; k?: number }
+/** A stalk with a fixed path (cherry stalks): width follows the stem, length does not. */
+export type StalkStroke = { part: 'stem'; d: string; k?: number }
+/** A vein from point `a` on the midrib through control `c` to tip `b`. */
+export type VeinStroke = { part: 'vein'; a: Pt; c: Pt; b: Pt; k?: number }
+export type PartStroke = StemStroke | StalkStroke | VeinStroke
 
 export type LeafShape = {
   /** Filled shapes: 'leaf' uses the tree's fall color, 'accent' a second color (fruit), 'stem' the stem color. */
@@ -78,18 +84,15 @@ const curve = (a: Pt, c: Pt, b: Pt) => `M${f(a[0])} ${f(a[1])}Q${f(c[0])} ${f(c[
 const circle = (cx: number, cy: number, r: number) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`
 
 /** Stem from below the leaf, straight up into the midrib, with a slight curve at the foot. */
-const stemInto = (top: number, foot = 95, bend = 4): PartStroke => ({
-  d: `M${50 + bend} ${foot}Q50 ${foot - 6} 50 ${foot - 16}L50 ${top}`,
-  part: 'stem',
-})
+const stemInto = (top: number, foot = 95, bend = 4): StemStroke => ({ part: 'stem', top, foot, bend })
 
-const vein = (d: string, k?: number): PartStroke => ({ d, part: 'vein', k })
+const vein = (a: Pt, c: Pt, b: Pt, k?: number): VeinStroke => ({ part: 'vein', a, c, b, k })
 
 /** Mirrored side veins from the midrib out toward the edge. */
-const pairs = (rows: [y: number, reach: number, rise: number][], k?: number): PartStroke[] =>
+const pairs = (rows: [y: number, reach: number, rise: number][], k?: number): VeinStroke[] =>
   rows.flatMap(([y, reach, rise]) => [
-    vein(curve([50, y], [50 + reach * 0.45, y - rise * 0.2], [50 + reach, y - rise]), k),
-    vein(curve([50, y], [50 - reach * 0.45, y - rise * 0.2], [50 - reach, y - rise]), k),
+    vein([50, y], [50 + reach * 0.45, y - rise * 0.2], [50 + reach, y - rise], k),
+    vein([50, y], [50 - reach * 0.45, y - rise * 0.2], [50 - reach, y - rise], k),
   ])
 
 // ── Outline builders ────────────────────────────────────────────────────────────
@@ -210,10 +213,10 @@ function oak(): LeafShape {
     blades: [{ d: smooth(soften([...right, ...left], 3, 0.24)) }],
     ink: [
       stemInto(14),
-      vein(curve([50, 36], [62, 34], [74, 30])),
-      vein(curve([50, 58], [64, 56], [77, 53])),
-      vein(curve([50, 42], [38, 40], [26, 34])),
-      vein(curve([50, 63], [37, 61], [24, 57])),
+      vein([50, 36], [62, 34], [74, 30]),
+      vein([50, 58], [64, 56], [77, 53]),
+      vein([50, 42], [38, 40], [26, 34]),
+      vein([50, 63], [37, 61], [24, 57]),
     ],
   }
 }
@@ -309,7 +312,7 @@ function basswood(): LeafShape {
   ]
   return {
     blades: [{ d: smooth(palmate(c, 21, lobes, 10)) }],
-    ink: [stemInto(20), vein(curve([50, 60], [58, 52], [68, 38])), vein(curve([50, 60], [42, 52], [32, 38]))],
+    ink: [stemInto(20), vein([50, 60], [58, 52], [68, 38]), vein([50, 60], [42, 52], [32, 38])],
   }
 }
 

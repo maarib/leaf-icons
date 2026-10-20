@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leaf Icon Editor</title>
+  <style>
+    /* Three panes: icon list | 100×100 canvas | settings and layers. Warm paper neutrals, one blue for selection. */
+    :root {
+      --bg: #f4f1ec; --panel: #fffdf9; --sunk: #ece7df; --text: #2b2724; --muted: #6f625a; --line: #e0d8cc;
+      --select: #2f6fdb; --select-soft: #dce8fb; --grid: rgba(43, 39, 36, 0.07); --chip-dark: #23201d;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #1b1917; --panel: #24211e; --sunk: #2d2a26; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530;
+        --select: #6aa0ff; --select-soft: #22324d; --grid: rgba(241, 232, 221, 0.07); --chip-dark: #121110; color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #1b1917; --panel: #24211e; --sunk: #2d2a26; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530;
+      --select: #6aa0ff; --select-soft: #22324d; --grid: rgba(241, 232, 221, 0.07); --chip-dark: #121110; color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button, input { font: inherit; color: inherit; }
+    button { border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+    button:hover { border-color: var(--muted); }
+    button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
+    button:disabled { opacity: 0.45; cursor: default; }
+
+    .wrap { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 12px; }
+    header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+    h1 { font-size: 15px; margin: 0; }
+    #status { color: var(--muted); font-size: 12px; }
+    header .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .app { display: grid; gap: 12px; grid-template-columns: 168px minmax(0, 1fr) 300px; align-items: start; }
+    .pane { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+
+    nav.icons { padding: 6px; display: grid; gap: 2px; }
+    nav.icons button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 5px 6px; text-align: left; border-radius: 7px; }
+    nav.icons button:hover { background: var(--sunk); }
+    nav.icons button[aria-current="true"] { background: var(--select-soft); }
+    nav.icons svg { width: 28px; height: 28px; flex: none; }
+    nav.icons .dot { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--select); }
+
+    .stage { padding: 12px; display: grid; gap: 12px; justify-items: center; }
+    .canvas { width: min(100%, 440px); aspect-ratio: 1; border-radius: 8px; background-color: var(--bg);
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 10% 10%; background-position: -0.5px -0.5px; }
+    .canvas svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .canvas [data-layer] { cursor: pointer; }
+    .canvas .outline, .canvas .outline * { fill: none; stroke: var(--select); stroke-width: 1.5px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+    .stage .hint { color: var(--muted); font-size: 12px; margin: 0; text-align: center; }
+    .sizes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .chip { display: flex; align-items: flex-end; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
+    .chip.dark { background: var(--chip-dark); }
+    .chip svg { display: block; }
+
+    aside { padding: 12px; display: grid; gap: 14px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--sunk); border-radius: 8px; padding: 3px; gap: 3px; }
+    .seg button { border: 0; background: none; padding: 5px; border-radius: 6px; }
+    .seg button[aria-pressed="true"] { background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+    .scope-note { color: var(--muted); font-size: 12px; margin: -6px 0 0; display: flex; gap: 8px; align-items: baseline; }
+    .scope-note button { padding: 0; border: 0; background: none; color: var(--select); }
+    fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+    legend, .layers-head { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; padding: 0; }
+    .row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
+    .row label { color: var(--muted); }
+    .row label.own::after { content: " •"; color: var(--select); }
+    .row output { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+    .row input[type="range"] { width: 100%; min-width: 0; }
+    .row input[type="color"] { width: 40px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: none; }
+    .pair { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .check { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+
+    .layers { display: grid; gap: 6px; }
+    .layers-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .layers-head button { padding: 0; border: 0; background: none; color: var(--select); text-transform: none; letter-spacing: 0; font-weight: 400; }
+    ol { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    li { display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 8px; border-top: 1px solid var(--line); cursor: pointer; }
+    li:first-child { border-top: 0; }
+    li:hover { background: var(--sunk); }
+    li[aria-selected="true"] { background: var(--select-soft); }
+    li .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, 0.15); }
+    li .sw.line { height: 4px; border-radius: 2px; }
+    li .name { flex: 1; min-width: 0; }
+    li .pos { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    li button { padding: 1px 6px; font-size: 12px; line-height: 1.3; }
+    .order { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .order button { padding: 5px 2px; font-size: 12px; }
+    .keys { color: var(--muted); font-size: 11px; margin: 0; }
+    kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); }
+
+    details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+    summary { cursor: pointer; color: var(--muted); }
+    pre { font-family: var(--mono); font-size: 12px; margin: 10px 0 0; overflow-x: auto; max-height: 360px; }
+
+    @media (max-width: 1000px) {
+      .app { grid-template-columns: minmax(0, 1fr) 300px; }
+      nav.icons { grid-column: 1 / -1; display: flex; overflow-x: auto; }
+      nav.icons button { flex-direction: column; gap: 2px; font-size: 11px; flex: none; }
+      nav.icons .dot { margin: 0; }
+    }
+    @media (max-width: 680px) {
+      .app { grid-template-columns: minmax(0, 1fr); }
+      header .actions { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Leaf icon editor</h1>
+      <span id="status" aria-live="polite"></span>
+      <div class="actions">
+        <button id="copy-svg" type="button">Copy SVG</button>
+        <button id="copy-config" type="button">Copy settings</button>
+        <button id="reset-all" type="button">Reset all</button>
+        <!-- EXTRA-ACTIONS -->
+      </div>
+    </header>
+
+    <div class="app">
+      <nav class="icons pane" id="icon-list" aria-label="Icons"></nav>
+
+      <section class="stage pane" aria-label="Canvas">
+        <div class="canvas" id="canvas"></div>
+        <p class="hint">Click a shape to select its layer.</p>
+        <div class="sizes" id="sizes"></div>
+      </section>
+
+      <aside class="pane">
+        <div>
+          <div class="seg" role="group" aria-label="Settings apply to">
+            <button id="scope-all" type="button" aria-pressed="true">All icons</button>
+            <button id="scope-icon" type="button" aria-pressed="false">This icon</button>
+          </div>
+        </div>
+        <p class="scope-note" id="scope-note"></p>
+
+        <fieldset>
+          <legend>Stem</legend>
+          <div class="row"><label for="stem-width">Width</label><input id="stem-width" type="range" min="1" max="14" step="0.1" data-part="stem" data-key="width"><output for="stem-width"></output></div>
+          <div class="row"><label for="stem-length">Stalk length</label><input id="stem-length" type="range" min="-25" max="5" step="0.5" data-part="stem" data-key="length"><output for="stem-length"></output></div>
+          <div class="row"><label for="stem-midrib">Midrib</label><input id="stem-midrib" type="range" min="-40" max="25" step="0.5" data-part="stem" data-key="midrib"><output for="stem-midrib"></output></div>
+          <div class="row"><label for="stem-color">Color</label><input id="stem-color" type="color" data-part="stem" data-key="color"><span></span></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Veins</legend>
+          <label class="check"><input id="veins-show" type="checkbox" data-part="veins" data-key="show"> Show veins</label>
+          <div class="row"><label for="veins-width">Width</label><input id="veins-width" type="range" min="0.5" max="10" step="0.1" data-part="veins" data-key="width"><output for="veins-width"></output></div>
+          <div class="row"><label for="veins-length">Length</label><input id="veins-length" type="range" min="0.3" max="1.6" step="0.01" data-part="veins" data-key="length"><output for="veins-length"></output></div>
+          <div class="row"><label for="veins-color">Color</label><span class="pair"><input id="veins-color" type="color" data-part="veins" data-key="color"><label class="check"><input id="veins-match" type="checkbox"> Same as stem</label></span><span></span></div>
+        </fieldset>
+
+        <div class="layers">
+          <div class="layers-head">Layers <button id="reset-order" type="button">Reset order</button></div>
+          <ol id="layer-list" aria-label="Layers, front to back"></ol>
+          <div class="order">
+            <button id="to-front" type="button" title="Bring to front (Shift+])">Front</button>
+            <button id="forward" type="button" title="Bring forward (])">Forward</button>
+            <button id="backward" type="button" title="Send backward ([)">Back</button>
+            <button id="to-back" type="button" title="Send to back (Shift+[)">To back</button>
+          </div>
+          <p class="keys"><kbd>]</kbd> forward · <kbd>[</kbd> back · add <kbd>Shift</kbd> for front / to back · <kbd>Esc</kbd> deselect</p>
+        </div>
+      </aside>
+    </div>
+
+    <details>
+      <summary>Settings (stems.config.json)</summary>
+      <pre id="json" tabindex="0"></pre>
+    </details>
+  </div>
+
+  <script>
+/* RENDER */
+
+    const MODELS = /* MODELS */ null
+    const DEFAULTS = /* CONFIG */ null
+    const LOCAL_KEY = 'leaf-icons-config'
+    const $ = (id) => document.getElementById(id)
+    const clone = (o) => JSON.parse(JSON.stringify(o))
+
+    let config = clone(DEFAULTS)
+    let current = MODELS[0].id
+    let selected = null
+    let scope = 'all'
+    const model = () => MODELS.find((m) => m.id === current)
+
+    // ── Editing ──
+
+    function own(id = current) {
+      config.icons ??= {}
+      return (config.icons[id] ??= {})
+    }
+    function tidy(id = current) {
+      const o = config.icons?.[id]
+      if (!o) return
+      for (const k of ['stem', 'veins']) if (o[k] && !Object.keys(o[k]).length) delete o[k]
+      if (o.order && !o.order.length) delete o.order
+      if (!Object.keys(o).length) delete config.icons[id]
+    }
+    function setValue(part, key, value) {
+      if (scope === 'all') config[part][key] = value
+      else (own()[part] ??= {})[key] = value
+    }
+    function hasOverrides(id) {
+      const o = config.icons?.[id]
+      return !!(o && (o.stem || o.veins || o.order))
+    }
+
+    function move(how) {
+      if (!selected) return
+      const ids = order(model(), config)
+      const i = ids.indexOf(selected)
+      const j = how === 'front' ? ids.length - 1 : how === 'back' ? 0 : Math.max(0, Math.min(ids.length - 1, i + how))
+      if (i === j) return
+      ids.splice(i, 1)
+      ids.splice(j, 0, selected)
+      own().order = ids
+      changed()
+    }
+
+    // ── Rendering ──
+
+    function renderNav() {
+      $('icon-list').replaceChildren(
+        ...MODELS.map((m) => {
+          const b = document.createElement('button')
+          b.type = 'button'
+          b.setAttribute('aria-current', String(m.id === current))
+          b.innerHTML = renderSvg(m, config) + `<span>${m.id}</span>` + (hasOverrides(m.id) ? '<span class="dot" title="Has its own settings"></span>' : '')
+          b.onclick = () => { current = m.id; selected = null; render() }
+          return b
+        }),
+      )
+    }
+
+    function renderCanvas() {
+      const canvas = $('canvas')
+      canvas.innerHTML = renderSvg(model(), config)
+      const svg = canvas.querySelector('svg')
+      const el = selected && svg.querySelector(`[data-layer="${selected}"]`)
+      if (el) {
+        const outline = el.cloneNode(true)
+        outline.removeAttribute('data-layer')
+        outline.setAttribute('class', 'outline')
+        svg.append(outline)
+      }
+      const svgMarkup = renderSvg(model(), config)
+      $('sizes').innerHTML = ['', 'dark']
+        .map((tone) => `<div class="chip ${tone}">${[16, 24, 32, 48].map((s) => svgMarkup.replace('<svg ', `<svg width="${s}" height="${s}" `)).join('')}</div>`)
+        .join('')
+    }
+
+    function swatch(layer, m, s) {
+      if (layer.type === 'blade') return `<span class="sw" style="background:${layer.fill === 'accent' ? m.accent : m.leaf}"></span>`
+      if (layer.type === 'needles') return `<span class="sw line" style="background:${m.leaf}"></span>`
+      if (layer.type === 'spur') return `<span class="sw" style="background:${s.stem.color}"></span>`
+      return `<span class="sw line" style="background:${layer.type === 'veins' ? s.veins.color : s.stem.color}"></span>`
+    }
+
+    function renderLayers() {
+      const m = model()
+      const s = resolve(config, m.id)
+      const byId = Object.fromEntries(m.layers.map((l) => [l.id, l]))
+      const ids = order(m, config)
+      $('layer-list').replaceChildren(
+        ...ids
+          .slice()
+          .reverse()
+          .map((id, k) => {
+            const l = byId[id]
+            const li = document.createElement('li')
+            li.setAttribute('aria-selected', String(id === selected))
+            li.tabIndex = 0
+            const hidden = l.type === 'veins' && !s.veins.show ? ' (hidden)' : ''
+            li.innerHTML = `${swatch(l, m, s)}<span class="name">${l.name}${hidden}</span><span class="pos">${k + 1}</span>`
+            const up = document.createElement('button')
+            up.type = 'button'
+            up.textContent = '↑'
+            up.title = 'Bring forward'
+            up.disabled = k === 0
+            up.onclick = (e) => { e.stopPropagation(); selected = id; move(1) }
+            const down = document.createElement('button')
+            down.type = 'button'
+            down.textContent = '↓'
+            down.title = 'Send backward'
+            down.disabled = k === ids.length - 1
+            down.onclick = (e) => { e.stopPropagation(); selected = id; move(-1) }
+            li.append(up, down)
+            li.onclick = () => { selected = id === selected ? null : id; render() }
+            li.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click() } }
+            return li
+          }),
+      )
+      const i = selected ? ids.indexOf(selected) : -1
+      $('to-front').disabled = $('forward').disabled = i < 0 || i === ids.length - 1
+      $('to-back').disabled = $('backward').disabled = i < 1
+      $('reset-order').hidden = !config.icons?.[current]?.order
+    }
+
+    function renderControls() {
+      const s = resolve(config, current)
+      const mine = config.icons?.[current] ?? {}
+      for (const input of document.querySelectorAll('[data-part]')) {
+        const { part, key } = input.dataset
+        const v = s[part][key]
+        if (input.type === 'checkbox') input.checked = v
+        else input.value = v
+        const label = document.querySelector(`label[for="${input.id}"]`) ?? input.closest('label')
+        label?.classList.toggle('own', scope === 'icon' && mine[part]?.[key] !== undefined)
+      }
+      for (const o of document.querySelectorAll('aside output')) {
+        const id = o.getAttribute('for')
+        const v = +$(id).value
+        o.value = id === 'veins-length' ? '×' + v.toFixed(2) : id.endsWith('width') ? String(v) : (v > 0 ? '+' : '') + v
+      }
+      $('veins-color').disabled = $('veins-match').checked
+      $('scope-all').setAttribute('aria-pressed', String(scope === 'all'))
+      $('scope-icon').setAttribute('aria-pressed', String(scope === 'icon'))
+      const n = Object.keys(config.icons ?? {}).filter((id) => config.icons[id].stem || config.icons[id].veins).length
+      const note = $('scope-note')
+      if (scope === 'all') note.textContent = n ? `Changes apply to every icon except where ${n === 1 ? 'one icon has' : n + ' icons have'} its own value.` : 'Changes apply to every icon.'
+      else {
+        note.textContent = `Changes apply to ${current} only. `
+        if (mine.stem || mine.veins) {
+          const clear = document.createElement('button')
+          clear.type = 'button'
+          clear.textContent = 'Use the shared settings'
+          clear.onclick = () => { delete own().stem; delete own().veins; tidy(); changed() }
+          note.append(clear)
+        }
+      }
+    }
+
+    function render() {
+      renderNav()
+      renderCanvas()
+      renderLayers()
+      renderControls()
+      $('json').textContent = JSON.stringify(config, null, 2)
+    }
+
+    // ── Saving: shared store when the page has one, else this browser ──
+
+    let ref = null
+    let saveTimer = null
+    let saving = false
+    const status = (t) => ($('status').textContent = t)
+
+    function changed() {
+      render()
+      clearTimeout(saveTimer)
+      status('Saving…')
+      saveTimer = setTimeout(save, 500)
+    }
+
+    async function save() {
+      saveTimer = null
+      if (!ref) {
+        try { localStorage.setItem(LOCAL_KEY, JSON.stringify(config)); status('Saved in this browser') }
+        catch { status('Not saved: copy the settings to keep them') }
+        return
+      }
+      saving = true
+      try { await ref.set({ config: clone(config), updatedAt: new Date().toISOString() }); status('Saved') }
+      catch (e) { status(e?.code === 'unauthenticated' ? 'Sign in to save' : 'View only: changes are not saved') }
+      finally { saving = false }
+    }
+
+    function adopt(saved) {
+      if (!saved?.stem || !saved?.veins) return
+      config = { ...clone(DEFAULTS), ...clone(saved) }
+      if (selected && !model().layers.some((l) => l.id === selected)) selected = null
+      $('veins-match').checked = resolve(config, current).veins.color === resolve(config, current).stem.color
+      render()
+    }
+
+    function loadLocal() {
+      try { const s = localStorage.getItem(LOCAL_KEY); if (s) adopt(JSON.parse(s)) } catch {}
+    }
+
+    async function connect() {
+      const pending = window.claude?.use?.('db')
+      const db = pending ? await pending.catch(() => null) : null
+      if (!db) { status(''); return }
+      ref = db.doc('settings/current')
+      ref.onSnapshot(
+        (snap) => {
+          if (saveTimer || saving) return
+          if (snap.exists) adopt(snap.data().config)
+          status('Saved')
+        },
+        () => status('Offline: changes may not save'),
+      )
+    }
+
+    // ── Controls ──
+
+    for (const input of document.querySelectorAll('[data-part]')) {
+      input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', () => {
+        const { part, key } = input.dataset
+        const v = input.type === 'checkbox' ? input.checked : input.type === 'range' ? +input.value : input.value
+        setValue(part, key, v)
+        if (part === 'stem' && key === 'color' && $('veins-match').checked) setValue('veins', 'color', v)
+        changed()
+      })
+    }
+    $('veins-match').onchange = (e) => {
+      if (e.target.checked) { setValue('veins', 'color', resolve(config, current).stem.color); changed() } else render()
+    }
+    $('scope-all').onclick = () => { scope = 'all'; render() }
+    $('scope-icon').onclick = () => { scope = 'icon'; render() }
+
+    $('canvas').addEventListener('click', (e) => {
+      const el = e.target.closest('[data-layer]')
+      selected = el ? el.dataset.layer : null
+      render()
+    })
+    $('to-front').onclick = () => move('front')
+    $('forward').onclick = () => move(1)
+    $('backward').onclick = () => move(-1)
+    $('to-back').onclick = () => move('back')
+    $('reset-order').onclick = () => { delete own().order; tidy(); changed() }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.closest('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === ']') move(1)
+      else if (e.key === '[') move(-1)
+      else if (e.key === '}') move('front')
+      else if (e.key === '{') move('back')
+      else if (e.key === 'Escape' && selected) { selected = null; render() }
+      else return
+      e.preventDefault()
+    })
+
+    async function copy(button, text, label) {
+      try { await navigator.clipboard.writeText(text); button.textContent = 'Copied' }
+      catch {
+        $('json').textContent = text
+        $('json').closest('details').open = true
+        getSelection().selectAllChildren($('json'))
+        button.textContent = 'Selected below: press ⌘C'
+      }
+      setTimeout(() => { button.textContent = label; $('json').textContent = JSON.stringify(config, null, 2) }, 2500)
+    }
+    $('copy-svg').onclick = (e) => copy(e.currentTarget, renderSvg(model(), config), 'Copy SVG')
+    $('copy-config').onclick = (e) => copy(e.currentTarget, JSON.stringify(config, null, 2) + '\n', 'Copy settings')
+
+    let resetArmed = null
+    $('reset-all').onclick = (e) => {
+      const b = e.currentTarget
+      if (!resetArmed) {
+        b.textContent = 'Click again to reset everything'
+        resetArmed = setTimeout(() => { resetArmed = null; b.textContent = 'Reset all' }, 3000)
+        return
+      }
+      clearTimeout(resetArmed)
+      resetArmed = null
+      b.textContent = 'Reset all'
+      config = clone(DEFAULTS)
+      selected = null
+      changed()
+    }
+
+    $('veins-match').checked = config.veins.color === config.stem.color
+    render()
+    loadLocal()
+    connect()
+  </script>
+</body>
+</html>
