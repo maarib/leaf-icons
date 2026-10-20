@@ -4,177 +4,337 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Leaf Icon Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
   <style>
-    /* Three panes: icon list | 100×100 canvas | settings and layers. Warm paper neutrals, one blue for selection. */
+    /* Design-tool layout: toolbar on top, icons and layers on the left, an infinite canvas of 100×100
+       frames in the middle, properties on the right. Neutral chrome so the leaf colors carry the page. */
     :root {
-      --bg: #f4f1ec; --panel: #fffdf9; --sunk: #ece7df; --text: #2b2724; --muted: #6f625a; --line: #e0d8cc;
-      --select: #2f6fdb; --select-soft: #dce8fb; --grid: rgba(43, 39, 36, 0.07); --chip-dark: #23201d;
+      --chrome: #ffffff; --canvas: #f2f2f2; --line: #e6e6e6; --hover: #f2f2f2; --field: #f5f5f5;
+      --text: #1e1e1e; --muted: #757575; --faint: #b3b3b3;
+      --accent: #0d99ff; --accent-text: #ffffff; --accent-soft: #e5f4ff; --accent-ink: #007be5;
+      --paper: #f6f3ee; --grid: rgba(43, 39, 36, 0.06); --shadow: 0 2px 14px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.06);
+      --font: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
       --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
-        --bg: #1b1917; --panel: #24211e; --sunk: #2d2a26; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530;
-        --select: #6aa0ff; --select-soft: #22324d; --grid: rgba(241, 232, 221, 0.07); --chip-dark: #121110; color-scheme: dark;
+        --chrome: #2c2c2c; --canvas: #1e1e1e; --line: #3d3d3d; --hover: #383838; --field: #383838;
+        --text: #f5f5f5; --muted: #b3b3b3; --faint: #6b6b6b;
+        --accent: #0c8ce9; --accent-text: #ffffff; --accent-soft: #1f3b52; --accent-ink: #4db3ff;
+        --grid: rgba(43, 39, 36, 0.07); --shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        color-scheme: dark;
       }
     }
     :root[data-theme="dark"] {
-      --bg: #1b1917; --panel: #24211e; --sunk: #2d2a26; --text: #f1e8dd; --muted: #a89b90; --line: #3a3530;
-      --select: #6aa0ff; --select-soft: #22324d; --grid: rgba(241, 232, 221, 0.07); --chip-dark: #121110; color-scheme: dark;
+      --chrome: #2c2c2c; --canvas: #1e1e1e; --line: #3d3d3d; --hover: #383838; --field: #383838;
+      --text: #f5f5f5; --muted: #b3b3b3; --faint: #6b6b6b;
+      --accent: #0c8ce9; --accent-text: #ffffff; --accent-soft: #1f3b52; --accent-ink: #4db3ff;
+      --grid: rgba(43, 39, 36, 0.07); --shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      color-scheme: dark;
     }
+
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; background: var(--chrome); color: var(--text); font: 11px/16px var(--font); -webkit-font-smoothing: antialiased; }
     button, input { font: inherit; color: inherit; }
-    button { border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
-    button:hover { border-color: var(--muted); }
-    button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
-    button:disabled { opacity: 0.45; cursor: default; }
+    button { background: none; border: 0; padding: 0; cursor: default; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
 
-    .wrap { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 12px; }
-    header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-    h1 { font-size: 15px; margin: 0; }
-    #status { color: var(--muted); font-size: 12px; }
-    header .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+    .app { height: 100%; display: grid; grid-template-columns: 240px minmax(0, 1fr) 248px; grid-template-rows: 40px minmax(0, 1fr); }
 
-    .app { display: grid; gap: 12px; grid-template-columns: 168px minmax(0, 1fr) 300px; align-items: start; }
-    .pane { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+    /* ── Toolbar ── */
+    .toolbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; padding-inline: 8px 16px; border-bottom: 1px solid var(--line); background: var(--chrome); min-width: 0; }
+    .tb { height: 32px; min-width: 32px; padding: 0 8px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    .tb:hover { background: var(--hover); }
+    .tb[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+    .tb:disabled { color: var(--faint); background: none; }
+    .tb .caret { width: 8px; height: 8px; }
+    .tb-sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+    .title { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+    .title b { color: var(--text); font-weight: 500; }
+    #status { color: var(--muted); white-space: nowrap; }
+    .tb.text { font-weight: 500; }
+    .tb.primary { background: var(--accent); color: var(--accent-text); padding: 0 12px; height: 24px; border-radius: 5px; }
+    .tb.primary:hover { filter: brightness(1.08); }
 
-    nav.icons { padding: 6px; display: grid; gap: 2px; }
-    nav.icons button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 5px 6px; text-align: left; border-radius: 7px; }
-    nav.icons button:hover { background: var(--sunk); }
-    nav.icons button[aria-current="true"] { background: var(--select-soft); }
-    nav.icons svg { width: 28px; height: 28px; flex: none; }
-    nav.icons .dot { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--select); }
+    /* ── Side panels ── */
+    .panel { background: var(--chrome); min-width: 0; min-height: 0; overflow: auto; }
+    .left { border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .right { border-left: 1px solid var(--line); }
+    .ph { display: flex; align-items: center; justify-content: space-between; height: 40px; padding-inline: 16px 8px; font-weight: 600; }
+    .ph .count { color: var(--muted); font-weight: 400; }
+    .pages { border-bottom: 1px solid var(--line); padding-bottom: 8px; max-height: 45vh; overflow: auto; }
+    .row { height: 32px; display: flex; align-items: center; gap: 8px; padding-inline: 16px 8px; border-radius: 5px; margin-inline: 8px; user-select: none; }
+    .row:hover { background: var(--hover); }
+    .row[aria-current="true"], .row[aria-selected="true"] { background: var(--accent-soft); }
+    .row .thumb { width: 20px; height: 20px; flex: none; padding: 2px; border-radius: 4px; background: var(--paper); }
+    .row .thumb svg { display: block; width: 100%; height: 100%; }
+    .row .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+    .row .kind { color: var(--muted); }
+    .row .eye { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--muted); visibility: hidden; }
+    .row:hover .eye, .row.off .eye { visibility: visible; }
+    .row .eye:hover { background: var(--field); color: var(--text); }
+    .row.off .name, .row.off .kind { color: var(--faint); }
+    .layers { overflow: auto; padding-bottom: 12px; }
+    .layers ol { list-style: none; margin: 0; padding: 0; }
+    .layers li.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+    .layers li.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+    .layers .empty { color: var(--muted); padding: 4px 16px; }
 
-    .stage { padding: 12px; display: grid; gap: 12px; justify-items: center; }
-    .canvas { width: min(100%, 440px); aspect-ratio: 1; border-radius: 8px; background-color: var(--bg);
-      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-      background-size: 10% 10%; background-position: -0.5px -0.5px; }
-    .canvas svg { width: 100%; height: 100%; display: block; overflow: visible; }
-    .canvas [data-layer] { cursor: pointer; }
-    .canvas .outline, .canvas .outline * { fill: none; stroke: var(--select); stroke-width: 1.5px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
-    .stage .hint { color: var(--muted); font-size: 12px; margin: 0; text-align: center; }
-    .sizes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .chip { display: flex; align-items: flex-end; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
-    .chip.dark { background: var(--chip-dark); }
-    .chip svg { display: block; }
+    /* ── Canvas ── */
+    .viewport { position: relative; overflow: hidden; background: var(--canvas); touch-action: none; cursor: default; }
+    .viewport.hand { cursor: grab; }
+    .viewport.panning { cursor: grabbing; }
+    .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .frame { position: absolute; width: 100px; height: 100px; }
+    .frame .label { position: absolute; left: 0; bottom: 100%; padding-bottom: calc(4px / var(--z)); font-size: calc(11px / var(--z)); line-height: 1.2; color: var(--muted); white-space: nowrap; transform-origin: 0 100%; }
+    .frame.current .label { color: var(--accent-ink); }
+    .frame .art { position: absolute; inset: 0; background: var(--paper); box-shadow: 0 0 0 calc(1px / var(--z)) rgba(0, 0, 0, 0.06); }
+    .frame.current .art { box-shadow: 0 0 0 calc(1px / var(--z)) var(--accent); }
+    .viewport.grid .frame .art { background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 10px 10px; background-position: -0.5px -0.5px; }
+    .frame svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .frame .overlay { pointer-events: none; }
+    .overlay * { fill: none !important; stroke: var(--accent) !important; vector-effect: non-scaling-stroke; }
+    .overlay .hov, .overlay .hov * { stroke-width: 1.5px !important; }
+    .overlay .sel, .overlay .sel * { stroke-width: 1px !important; }
+    .overlay .box { stroke-width: 1px !important; }
+    .dims { position: absolute; transform: translate(-50%, calc(6px / var(--z))); font-size: calc(10px / var(--z)); line-height: 1.4; padding: 0 calc(4px / var(--z)); border-radius: calc(2px / var(--z)); background: var(--accent); color: var(--accent-text); white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+    .hud { position: absolute; left: 12px; bottom: 12px; color: var(--muted); background: var(--chrome); border-radius: 6px; padding: 4px 8px; box-shadow: var(--shadow); pointer-events: none; }
 
-    aside { padding: 12px; display: grid; gap: 14px; }
-    .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--sunk); border-radius: 8px; padding: 3px; gap: 3px; }
-    .seg button { border: 0; background: none; padding: 5px; border-radius: 6px; }
-    .seg button[aria-pressed="true"] { background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
-    .scope-note { color: var(--muted); font-size: 12px; margin: -6px 0 0; display: flex; gap: 8px; align-items: baseline; }
-    .scope-note button { padding: 0; border: 0; background: none; color: var(--select); }
-    fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
-    legend, .layers-head { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; padding: 0; }
-    .row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
-    .row label { color: var(--muted); }
-    .row label.own::after { content: " •"; color: var(--select); }
-    .row output { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
-    .row input[type="range"] { width: 100%; min-width: 0; }
-    .row input[type="color"] { width: 40px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: none; }
-    .pair { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .check { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+    /* ── Properties ── */
+    .tabs { display: flex; gap: 4px; height: 40px; align-items: center; padding-inline: 8px; border-bottom: 1px solid var(--line); }
+    .tab { height: 24px; padding: 0 8px; border-radius: 5px; font-weight: 600; color: var(--muted); }
+    .tab:hover { color: var(--text); }
+    .tab[aria-selected="true"] { color: var(--text); background: var(--hover); }
+    section.s { border-bottom: 1px solid var(--line); padding: 8px 16px 12px; display: grid; gap: 8px; }
+    .sh { display: flex; align-items: center; justify-content: space-between; height: 24px; font-weight: 600; }
+    .sh .acts { display: flex; gap: 2px; }
+    .ib { width: 24px; height: 24px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+    .ib:hover { background: var(--hover); color: var(--text); }
+    .ib[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); }
+    .ib:disabled { color: var(--faint); background: none; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--field); border-radius: 5px; padding: 2px; }
+    .seg button { height: 24px; border-radius: 4px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+    .seg button[aria-pressed="true"] { background: var(--chrome); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+    .note { color: var(--muted); margin: 0; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field { height: 28px; display: flex; align-items: center; background: var(--field); border-radius: 5px; border: 1px solid transparent; min-width: 0; }
+    .field:hover { border-color: var(--line); }
+    .field:focus-within { border-color: var(--accent); }
+    .field .fl { flex: none; padding-left: 8px; color: var(--muted); cursor: ew-resize; user-select: none; min-width: 24px; }
+    .field input { flex: 1; min-width: 0; width: 100%; height: 100%; border: 0; background: none; outline: none; padding: 0 8px 0 6px; font-variant-numeric: tabular-nums; }
+    .field.own input { color: var(--accent-ink); }
+    .field.shadowed .fl::after { content: " •"; color: var(--accent-ink); }
+    .field.off { opacity: 0.45; }
+    .color { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; align-items: center; }
+    .swatch { position: relative; width: 16px; height: 16px; border-radius: 3px; margin-left: 6px; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); overflow: hidden; }
+    .swatch input { position: absolute; inset: -4px; width: 24px; height: 24px; opacity: 0; cursor: pointer; }
+    .arrange { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .arrange .ib { width: 100%; background: var(--field); }
+    .arrange .ib:hover { background: var(--hover); }
+    .layer-meta { display: flex; align-items: center; gap: 8px; }
+    .layer-meta .kind { color: var(--muted); }
+    .btn { height: 28px; border-radius: 5px; background: var(--field); padding: 0 12px; text-align: center; font-weight: 500; }
+    .btn:hover { background: var(--hover); box-shadow: inset 0 0 0 1px var(--line); }
+    .btn.primary { background: var(--accent); color: var(--accent-text); }
+    .btn.primary:hover { filter: brightness(1.08); box-shadow: none; }
+    .stack { display: grid; gap: 8px; }
+    .code { position: relative; }
+    .code pre { margin: 0; font: 11px/16px var(--mono); background: var(--field); border-radius: 5px; padding: 8px; overflow: auto; max-height: 340px; white-space: pre; }
+    .keys { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; color: var(--muted); margin: 0; }
+    .keys dt { margin: 0; }
+    .keys dd { margin: 0; color: var(--text); font-family: var(--mono); }
 
-    .layers { display: grid; gap: 6px; }
-    .layers-head { display: flex; justify-content: space-between; align-items: baseline; }
-    .layers-head button { padding: 0; border: 0; background: none; color: var(--select); text-transform: none; letter-spacing: 0; font-weight: 400; }
-    ol { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-    li { display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 8px; border-top: 1px solid var(--line); cursor: pointer; }
-    li:first-child { border-top: 0; }
-    li:hover { background: var(--sunk); }
-    li[aria-selected="true"] { background: var(--select-soft); }
-    li .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, 0.15); }
-    li .sw.line { height: 4px; border-radius: 2px; }
-    li .name { flex: 1; min-width: 0; }
-    li .pos { color: var(--muted); font-family: var(--mono); font-size: 11px; }
-    li button { padding: 1px 6px; font-size: 12px; line-height: 1.3; }
-    .order { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-    .order button { padding: 5px 2px; font-size: 12px; }
-    .keys { color: var(--muted); font-size: 11px; margin: 0; }
-    kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); }
+    /* ── Menus and toast ── */
+    .menu { position: fixed; z-index: 20; min-width: 200px; background: #1e1e1e; color: #fff; border-radius: 8px; padding: 6px 0; box-shadow: var(--shadow); }
+    .menu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 24px; height: 24px; padding: 0 16px 0 24px; text-align: left; }
+    .menu button:hover:not(:disabled) { background: var(--accent); }
+    .menu button:disabled { color: #777; }
+    .menu kbd { font: inherit; color: #9a9a9a; }
+    .menu button:hover:not(:disabled) kbd { color: #fff; }
+    .menu hr { border: 0; border-top: 1px solid #3a3a3a; margin: 6px 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 30; background: #1e1e1e; color: #fff; border-radius: 6px; padding: 8px 12px; box-shadow: var(--shadow); }
 
-    details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
-    summary { cursor: pointer; color: var(--muted); }
-    pre { font-family: var(--mono); font-size: 12px; margin: 10px 0 0; overflow-x: auto; max-height: 360px; }
-
-    @media (max-width: 1000px) {
-      .app { grid-template-columns: minmax(0, 1fr) 300px; }
-      nav.icons { grid-column: 1 / -1; display: flex; overflow-x: auto; }
-      nav.icons button { flex-direction: column; gap: 2px; font-size: 11px; flex: none; }
-      nav.icons .dot { margin: 0; }
+    @media (max-width: 820px) {
+      html, body { height: auto; }
+      .app { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: 40px 58vh auto auto; }
+      .toolbar { grid-column: 1; }
+      .title { flex: 1; visibility: hidden; }
+      #status, .tb-sep { display: none; }
+      .toolbar { gap: 2px; padding-inline: 4px 8px; }
+      .left, .right { border: 0; border-top: 1px solid var(--line); overflow: visible; }
+      .pages { max-height: none; }
+      .pages .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+      .hide-narrow { display: none !important; }
+      .viewport { order: 1; }
+      .left { order: 2; }
+      .right { order: 3; }
+      .row .eye { visibility: visible; }
     }
-    @media (max-width: 680px) {
-      .app { grid-template-columns: minmax(0, 1fr); }
-      header .actions { margin-left: 0; }
-    }
+    @media (prefers-reduced-motion: no-preference) { .world.glide { transition: transform 180ms ease-out; } }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Leaf icon editor</h1>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-menu" viewBox="0 0 16 16"><path d="M3 5h10M3 8h10M3 11h10"/></symbol>
+    <symbol id="i-move" viewBox="0 0 16 16"><path d="M4 2.5l8.5 5.2-3.7.9 2.1 3.9-1.5.8-2.1-3.9-2.8 2.6z"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 8V4a1 1 0 0 1 2 0v3.5M7.5 7V3a1 1 0 0 1 2 0v4M9.5 7V4a1 1 0 0 1 2 0v5c0 2.8-1.8 4.5-4.2 4.5-1.6 0-2.6-.7-3.5-2L2.4 9.2a1 1 0 0 1 1.6-1.1l1.5 1.4"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 4L3 6.5 5.5 9M3 6.5h6.5a3.5 3.5 0 0 1 0 7H7"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M10.5 4L13 6.5 10.5 9M13 6.5H6.5a3.5 3.5 0 0 0 0 7H9"/></symbol>
+    <symbol id="i-caret" viewBox="0 0 8 8"><path d="M1.5 3l2.5 2.5L6.5 3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 16 16"><path d="M2 2l12 12M6.6 3.7A6.3 6.3 0 0 1 8 3.5C12 3.5 14.5 8 14.5 8a12 12 0 0 1-1.9 2.4M10.6 11.9A6 6 0 0 1 8 12.5C4 12.5 1.5 8 1.5 8a12.6 12.6 0 0 1 2.6-3"/></symbol>
+    <symbol id="i-path" viewBox="0 0 16 16"><path d="M3 12.5C4 7 8 4.5 13 3.5"/><rect x="1.5" y="11" width="3" height="3" rx=".5"/><rect x="11.5" y="2" width="3" height="3" rx=".5"/></symbol>
+    <symbol id="i-group" viewBox="0 0 16 16"><path d="M3 5.5V3h2.5M10.5 3H13v2.5M13 10.5V13h-2.5M5.5 13H3v-2.5"/></symbol>
+    <symbol id="i-frame" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2.5v2.5h2.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1A2.5 2.5 0 0 1 4.5 9l1-1"/></symbol>
+    <symbol id="i-front" viewBox="0 0 16 16"><path d="M8 13V3M4 7l4-4 4 4M3 14h10"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 16 16"><path d="M8 13V4M4.5 7.5L8 4l3.5 3.5"/></symbol>
+    <symbol id="i-backward" viewBox="0 0 16 16"><path d="M8 3v9M4.5 8.5L8 12l3.5-3.5"/></symbol>
+    <symbol id="i-back" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4M3 2h10"/></symbol>
+    <symbol id="i-comment" viewBox="0 0 16 16"><path d="M3 3.5h10v7H7l-3 2.5v-2.5H3z"/></symbol>
+  </svg>
+
+  <div class="app">
+    <header class="toolbar">
+      <button class="tb" id="main-menu" type="button" title="Menu" aria-haspopup="menu"><svg class="i"><use href="#i-menu"/></svg></button>
+      <span class="tb-sep"></span>
+      <button class="tb" id="tool-move" type="button" title="Move (V)" aria-pressed="true"><svg class="i"><use href="#i-move"/></svg></button>
+      <button class="tb" id="tool-hand" type="button" title="Hand tool (H, or hold Space)" aria-pressed="false"><svg class="i"><use href="#i-hand"/></svg></button>
+      <span class="tb-sep"></span>
+      <button class="tb" id="undo" type="button" title="Undo (⌘Z)"><svg class="i"><use href="#i-undo"/></svg></button>
+      <button class="tb" id="redo" type="button" title="Redo (⇧⌘Z)"><svg class="i"><use href="#i-redo"/></svg></button>
+      <div class="title"><span class="hide-narrow">Leaf icons / </span><b id="doc-icon"></b></div>
       <span id="status" aria-live="polite"></span>
-      <div class="actions">
-        <button id="copy-svg" type="button">Copy SVG</button>
-        <button id="copy-config" type="button">Copy settings</button>
-        <button id="reset-all" type="button">Reset all</button>
-        <!-- EXTRA-ACTIONS -->
-      </div>
+      <!-- EXTRA-ACTIONS -->
+      <button class="tb text" id="zoom" type="button" title="Zoom" aria-haspopup="menu"><span id="zoom-label">100%</span><svg class="i caret"><use href="#i-caret"/></svg></button>
+      <button class="tb primary" id="export-top" type="button" title="Export the current icon as SVG">Export</button>
     </header>
 
-    <div class="app">
-      <nav class="icons pane" id="icon-list" aria-label="Icons"></nav>
+    <aside class="panel left" aria-label="Icons and layers">
+      <div class="pages">
+        <div class="ph">Icons <span class="count" id="icon-count"></span></div>
+        <div class="list" id="icon-list" role="listbox" aria-label="Icons"></div>
+      </div>
+      <div class="layers">
+        <div class="ph">Layers</div>
+        <ol id="layer-list" aria-label="Layers, front to back"></ol>
+      </div>
+    </aside>
 
-      <section class="stage pane" aria-label="Canvas">
-        <div class="canvas" id="canvas"></div>
-        <p class="hint">Click a shape to select its layer.</p>
-        <div class="sizes" id="sizes"></div>
-      </section>
+    <main class="viewport grid" id="viewport" aria-label="Canvas">
+      <div class="world" id="world"></div>
+      <div class="hud hide-narrow" id="hud">Scroll to pan · ⌘ + scroll or pinch to zoom · ⇧1 fit all</div>
+    </main>
 
-      <aside class="pane">
-        <div>
-          <div class="seg" role="group" aria-label="Settings apply to">
+    <aside class="panel right" aria-label="Properties">
+      <div class="tabs" role="tablist">
+        <button class="tab" id="tab-design" role="tab" type="button" aria-selected="true">Design</button>
+        <button class="tab" id="tab-code" role="tab" type="button" aria-selected="false">Code</button>
+      </div>
+
+      <div id="pane-design">
+        <section class="s">
+          <div class="sh">Apply to</div>
+          <div class="seg" role="group" aria-label="Changes apply to">
             <button id="scope-all" type="button" aria-pressed="true">All icons</button>
-            <button id="scope-icon" type="button" aria-pressed="false">This icon</button>
+            <button id="scope-icon" type="button" aria-pressed="false"></button>
           </div>
-        </div>
-        <p class="scope-note" id="scope-note"></p>
+          <p class="note" id="scope-note"></p>
+        </section>
 
-        <fieldset>
-          <legend>Stem</legend>
-          <div class="row"><label for="stem-width">Width</label><input id="stem-width" type="range" min="1" max="14" step="0.1" data-part="stem" data-key="width"><output for="stem-width"></output></div>
-          <div class="row"><label for="stem-length">Stalk length</label><input id="stem-length" type="range" min="-25" max="5" step="0.5" data-part="stem" data-key="length"><output for="stem-length"></output></div>
-          <div class="row"><label for="stem-midrib">Midrib</label><input id="stem-midrib" type="range" min="-40" max="25" step="0.5" data-part="stem" data-key="midrib"><output for="stem-midrib"></output></div>
-          <div class="row"><label for="stem-color">Color</label><input id="stem-color" type="color" data-part="stem" data-key="color"><span></span></div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Veins</legend>
-          <label class="check"><input id="veins-show" type="checkbox" data-part="veins" data-key="show"> Show veins</label>
-          <div class="row"><label for="veins-width">Width</label><input id="veins-width" type="range" min="0.5" max="10" step="0.1" data-part="veins" data-key="width"><output for="veins-width"></output></div>
-          <div class="row"><label for="veins-length">Length</label><input id="veins-length" type="range" min="0.3" max="1.6" step="0.01" data-part="veins" data-key="length"><output for="veins-length"></output></div>
-          <div class="row"><label for="veins-color">Color</label><span class="pair"><input id="veins-color" type="color" data-part="veins" data-key="color"><label class="check"><input id="veins-match" type="checkbox"> Same as stem</label></span><span></span></div>
-        </fieldset>
-
-        <div class="layers">
-          <div class="layers-head">Layers <button id="reset-order" type="button">Reset order</button></div>
-          <ol id="layer-list" aria-label="Layers, front to back"></ol>
-          <div class="order">
-            <button id="to-front" type="button" title="Bring to front (Shift+])">Front</button>
-            <button id="forward" type="button" title="Bring forward (])">Forward</button>
-            <button id="backward" type="button" title="Send backward ([)">Back</button>
-            <button id="to-back" type="button" title="Send to back (Shift+[)">To back</button>
+        <section class="s" id="sec-layer" hidden>
+          <div class="sh"><span>Layer</span>
+            <span class="acts"><button class="ib" id="layer-eye" type="button" title="Show or hide (⇧⌘H)"><svg class="i"><use href="#i-eye"/></svg></button></span>
           </div>
-          <p class="keys"><kbd>]</kbd> forward · <kbd>[</kbd> back · add <kbd>Shift</kbd> for front / to back · <kbd>Esc</kbd> deselect</p>
-        </div>
-      </aside>
-    </div>
+          <div class="layer-meta"><svg class="i" id="layer-icon"><use href="#i-path"/></svg><span id="layer-name"></span><span class="kind" id="layer-kind"></span></div>
+          <div class="arrange">
+            <button class="ib" id="to-front" type="button" title="Bring to front (])"><svg class="i"><use href="#i-front"/></svg></button>
+            <button class="ib" id="forward" type="button" title="Bring forward (⌘])"><svg class="i"><use href="#i-forward"/></svg></button>
+            <button class="ib" id="backward" type="button" title="Send backward (⌘[)"><svg class="i"><use href="#i-backward"/></svg></button>
+            <button class="ib" id="to-back" type="button" title="Send to back ([)"><svg class="i"><use href="#i-back"/></svg></button>
+          </div>
+        </section>
 
-    <details>
-      <summary>Settings (stems.config.json)</summary>
-      <pre id="json" tabindex="0"></pre>
-    </details>
+        <section class="s">
+          <div class="sh"><span>Stem</span>
+            <span class="acts"><button class="ib" id="reset-stem" type="button" title="Use the shared stem settings"><svg class="i"><use href="#i-reset"/></svg></button></span>
+          </div>
+          <div class="grid2">
+            <label class="field" data-part="stem" data-key="width" title="Stem width"><span class="fl">W</span><input inputmode="decimal" aria-label="Stem width"></label>
+            <label class="field" data-part="stem" data-key="length" title="Stalk length: how far the stem hangs below the leaf"><span class="fl">Stalk</span><input inputmode="decimal" aria-label="Stalk length"></label>
+            <label class="field" data-part="stem" data-key="midrib" title="Midrib length: how far the stem runs up the leaf"><span class="fl">Midrib</span><input inputmode="decimal" aria-label="Midrib length"></label>
+          </div>
+          <div class="color">
+            <label class="field" data-part="stem" data-key="color" data-kind="color" title="Stem color"><span class="swatch"><input type="color" aria-label="Pick stem color"></span><input class="hex" spellcheck="false" aria-label="Stem color hex"></label>
+            <span></span>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="sh"><span>Veins</span>
+            <span class="acts">
+              <button class="ib" id="reset-veins" type="button" title="Use the shared vein settings"><svg class="i"><use href="#i-reset"/></svg></button>
+              <button class="ib" id="veins-eye" type="button" title="Show or hide veins"><svg class="i"><use href="#i-eye"/></svg></button>
+            </span>
+          </div>
+          <div class="grid2">
+            <label class="field" data-part="veins" data-key="width" title="Vein width"><span class="fl">W</span><input inputmode="decimal" aria-label="Vein width"></label>
+            <label class="field" data-part="veins" data-key="length" title="Vein length, scaled from the midrib"><span class="fl">Length</span><input inputmode="decimal" aria-label="Vein length"></label>
+          </div>
+          <div class="color">
+            <label class="field" data-part="veins" data-key="color" data-kind="color" title="Vein color"><span class="swatch"><input type="color" aria-label="Pick vein color"></span><input class="hex" spellcheck="false" aria-label="Vein color hex"></label>
+            <button class="ib" id="veins-link" type="button" title="Same color as the stem"><svg class="i"><use href="#i-link"/></svg></button>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="sh">Export</div>
+          <div class="stack">
+            <button class="btn primary" id="export" type="button">Export SVG</button>
+            <div class="grid2">
+              <button class="btn" id="copy-svg" type="button">Copy SVG</button>
+              <button class="btn" id="copy-config" type="button">Copy settings</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="s hide-narrow">
+          <div class="sh">Shortcuts</div>
+          <dl class="keys">
+            <dt>Bring to front / send to back</dt><dd>] [</dd>
+            <dt>Forward / backward</dt><dd>⌘] ⌘[</dd>
+            <dt>Hide layer</dt><dd>⇧⌘H</dd>
+            <dt>Undo / redo</dt><dd>⌘Z ⇧⌘Z</dd>
+            <dt>Fit all / zoom to icon</dt><dd>⇧1 ⇧2</dd>
+            <dt>Zoom to 100%</dt><dd>⇧0</dd>
+            <dt>Move / hand</dt><dd>V H</dd>
+            <dt>Layout grid</dt><dd>⇧G</dd>
+          </dl>
+        </section>
+      </div>
+
+      <div id="pane-code" hidden>
+        <section class="s">
+          <div class="sh"><span id="code-svg-name"></span><span class="acts"><button class="btn" id="copy-svg-2" type="button">Copy</button></span></div>
+          <div class="code"><pre id="code-svg" tabindex="0"></pre></div>
+        </section>
+        <section class="s">
+          <div class="sh"><span>stems.config.json</span><span class="acts"><button class="btn" id="copy-config-2" type="button">Copy</button></span></div>
+          <div class="code"><pre id="code-config" tabindex="0"></pre></div>
+        </section>
+      </div>
+    </aside>
   </div>
+
+  <div class="menu" id="menu" role="menu" hidden></div>
+  <div class="toast" id="toast" role="status" hidden></div>
 
   <script>
 /* RENDER */
@@ -182,171 +342,678 @@
     const MODELS = /* MODELS */ null
     const DEFAULTS = /* CONFIG */ null
     const LOCAL_KEY = 'leaf-icons-config'
+    const FRAME = 100, GAP = 56, COLS = 5
     const $ = (id) => document.getElementById(id)
     const clone = (o) => JSON.parse(JSON.stringify(o))
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
+    const KINDS = { blade: 'Leaf shape', spur: 'Spur', needles: 'Needles', veins: 'Veins', stem: 'Stem' }
 
     let config = clone(DEFAULTS)
     let current = MODELS[0].id
     let selected = null
+    let hover = null
     let scope = 'all'
-    const model = () => MODELS.find((m) => m.id === current)
+    let tool = 'move'
+    let linked = config.veins.color === config.stem.color
+    const cam = { x: 0, y: 0, z: 1 }
+    const model = (id = current) => MODELS.find((m) => m.id === id)
 
-    // ── Editing ──
+    // ── Config edits, with undo ──
 
-    function own(id = current) {
-      config.icons ??= {}
-      return (config.icons[id] ??= {})
-    }
+    const own = (id = current) => ((config.icons ??= {})[id] ??= {})
     function tidy(id = current) {
       const o = config.icons?.[id]
       if (!o) return
       for (const k of ['stem', 'veins']) if (o[k] && !Object.keys(o[k]).length) delete o[k]
-      if (o.order && !o.order.length) delete o.order
+      for (const k of ['order', 'hidden']) if (o[k] && !o[k].length) delete o[k]
       if (!Object.keys(o).length) delete config.icons[id]
     }
+    const hasOwn = (id) => { const o = config.icons?.[id]; return !!(o && Object.keys(o).length) }
+
+    let past = [], future = [], lastKey = null, lastAt = 0
+    function mutate(fn, key = null) {
+      const before = JSON.stringify(config)
+      fn()
+      tidy()
+      if (JSON.stringify(config) === before) return
+      const now = Date.now()
+      if (!(key && key === lastKey && now - lastAt < 1200)) {
+        past.push(before)
+        if (past.length > 200) past.shift()
+        future = []
+      }
+      lastKey = key
+      lastAt = now
+      changed()
+    }
+    function undo() {
+      if (!past.length) return
+      future.push(JSON.stringify(config))
+      config = JSON.parse(past.pop())
+      lastKey = null
+      changed()
+      toast('Undo')
+    }
+    function redo() {
+      if (!future.length) return
+      past.push(JSON.stringify(config))
+      config = JSON.parse(future.pop())
+      lastKey = null
+      changed()
+      toast('Redo')
+    }
+
     function setValue(part, key, value) {
       if (scope === 'all') config[part][key] = value
       else (own()[part] ??= {})[key] = value
     }
-    function hasOverrides(id) {
-      const o = config.icons?.[id]
-      return !!(o && (o.stem || o.veins || o.order))
+
+    function isHidden(id, layer) {
+      if (layer.type === 'veins') return !resolve(config, id).veins.show
+      return (config.icons?.[id]?.hidden ?? []).includes(layer.id)
+    }
+    function toggleHidden(layerId = selected) {
+      const layer = layerId && model().layers.find((l) => l.id === layerId)
+      if (!layer) return
+      mutate(() => {
+        if (layer.type === 'veins') (own().veins ??= {}).show = isHidden(current, layer)
+        else {
+          const h = (own().hidden ??= [])
+          const i = h.indexOf(layer.id)
+          if (i < 0) h.push(layer.id)
+          else h.splice(i, 1)
+        }
+      })
     }
 
-    function move(how) {
-      if (!selected) return
-      const ids = order(model(), config)
-      const i = ids.indexOf(selected)
-      const j = how === 'front' ? ids.length - 1 : how === 'back' ? 0 : Math.max(0, Math.min(ids.length - 1, i + how))
-      if (i === j) return
-      ids.splice(i, 1)
-      ids.splice(j, 0, selected)
-      own().order = ids
-      changed()
+    function arrange(how, layerId = selected) {
+      if (!layerId) return
+      mutate(() => {
+        const ids = order(model(), config)
+        const i = ids.indexOf(layerId)
+        const j = how === 'front' ? ids.length - 1 : how === 'back' ? 0 : Math.max(0, Math.min(ids.length - 1, i + how))
+        if (i === j) return
+        ids.splice(i, 1)
+        ids.splice(j, 0, layerId)
+        own().order = ids
+      })
     }
 
-    // ── Rendering ──
+    // ── Canvas ──
 
-    function renderNav() {
-      $('icon-list').replaceChildren(
-        ...MODELS.map((m) => {
-          const b = document.createElement('button')
-          b.type = 'button'
-          b.setAttribute('aria-current', String(m.id === current))
-          b.innerHTML = renderSvg(m, config) + `<span>${m.id}</span>` + (hasOverrides(m.id) ? '<span class="dot" title="Has its own settings"></span>' : '')
-          b.onclick = () => { current = m.id; selected = null; render() }
-          return b
-        }),
-      )
+    const viewport = $('viewport')
+    const world = $('world')
+    const frames = {}
+    const pos = (i) => ({ x: (i % COLS) * (FRAME + GAP), y: Math.floor(i / COLS) * (FRAME + GAP) })
+
+    MODELS.forEach((m, i) => {
+      const f = document.createElement('div')
+      f.className = 'frame'
+      f.dataset.icon = m.id
+      const p = pos(i)
+      f.style.left = p.x + 'px'
+      f.style.top = p.y + 'px'
+      f.innerHTML = `<div class="label">${m.id}</div><div class="art"></div><svg class="overlay" viewBox="0 0 100 100"></svg>`
+      world.append(f)
+      frames[m.id] = f
+    })
+
+    function applyCam(glide = false) {
+      world.classList.toggle('glide', glide)
+      world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`
+      world.style.setProperty('--z', cam.z)
+      $('zoom-label').textContent = Math.round(cam.z * 100) + '%'
+    }
+    function fit(rect, glide = true, pad = 0.82) {
+      const v = viewport.getBoundingClientRect()
+      if (!v.width || !v.height) return
+      cam.z = Math.min(32, Math.max(0.1, Math.min(v.width / rect.w, v.height / rect.h) * pad))
+      cam.x = v.width / 2 - (rect.x + rect.w / 2) * cam.z
+      cam.y = v.height / 2 - (rect.y + rect.h / 2) * cam.z
+      applyCam(glide)
+    }
+    const allRect = () => {
+      const rows = Math.ceil(MODELS.length / COLS)
+      return { x: -20, y: -24, w: COLS * FRAME + (COLS - 1) * GAP + 40, h: rows * FRAME + (rows - 1) * GAP + 44 }
+    }
+    const frameRect = (id) => { const p = pos(MODELS.findIndex((m) => m.id === id)); return { x: p.x, y: p.y - 10, w: FRAME, h: FRAME + 10 } }
+    function zoomBy(factor, cx, cy) {
+      const v = viewport.getBoundingClientRect()
+      cx ??= v.width / 2
+      cy ??= v.height / 2
+      const z = Math.min(32, Math.max(0.1, cam.z * factor))
+      cam.x = cx - ((cx - cam.x) * z) / cam.z
+      cam.y = cy - ((cy - cam.y) * z) / cam.z
+      cam.z = z
+      applyCam()
+    }
+    function zoomTo(z) { zoomBy(z / cam.z) }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault()
+      const v = viewport.getBoundingClientRect()
+      if (e.ctrlKey || e.metaKey) zoomBy(Math.exp(-e.deltaY * 0.01), e.clientX - v.left, e.clientY - v.top)
+      else { cam.x -= e.deltaX; cam.y -= e.deltaY; applyCam() }
+    }, { passive: false })
+
+    let spaceHeld = false
+    let drag = null
+    const handActive = () => tool === 'hand' || spaceHeld
+    function setTool(t) {
+      tool = t
+      $('tool-move').setAttribute('aria-pressed', String(t === 'move'))
+      $('tool-hand').setAttribute('aria-pressed', String(t === 'hand'))
+      viewport.classList.toggle('hand', handActive())
     }
 
-    function renderCanvas() {
-      const canvas = $('canvas')
-      canvas.innerHTML = renderSvg(model(), config)
-      const svg = canvas.querySelector('svg')
-      const el = selected && svg.querySelector(`[data-layer="${selected}"]`)
-      if (el) {
-        const outline = el.cloneNode(true)
-        outline.removeAttribute('data-layer')
-        outline.setAttribute('class', 'outline')
-        svg.append(outline)
+    viewport.addEventListener('pointerdown', (e) => {
+      closeMenu()
+      if (e.button === 1 || (e.button === 0 && handActive())) {
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }
+        viewport.setPointerCapture(e.pointerId)
+        viewport.classList.add('panning')
+        e.preventDefault()
+        return
       }
-      const svgMarkup = renderSvg(model(), config)
-      $('sizes').innerHTML = ['', 'dark']
-        .map((tone) => `<div class="chip ${tone}">${[16, 24, 32, 48].map((s) => svgMarkup.replace('<svg ', `<svg width="${s}" height="${s}" `)).join('')}</div>`)
-        .join('')
-    }
-
-    function swatch(layer, m, s) {
-      if (layer.type === 'blade') return `<span class="sw" style="background:${layer.fill === 'accent' ? m.accent : m.leaf}"></span>`
-      if (layer.type === 'needles') return `<span class="sw line" style="background:${m.leaf}"></span>`
-      if (layer.type === 'spur') return `<span class="sw" style="background:${s.stem.color}"></span>`
-      return `<span class="sw line" style="background:${layer.type === 'veins' ? s.veins.color : s.stem.color}"></span>`
-    }
-
-    function renderLayers() {
-      const m = model()
-      const s = resolve(config, m.id)
-      const byId = Object.fromEntries(m.layers.map((l) => [l.id, l]))
-      const ids = order(m, config)
-      $('layer-list').replaceChildren(
-        ...ids
-          .slice()
-          .reverse()
-          .map((id, k) => {
-            const l = byId[id]
-            const li = document.createElement('li')
-            li.setAttribute('aria-selected', String(id === selected))
-            li.tabIndex = 0
-            const hidden = l.type === 'veins' && !s.veins.show ? ' (hidden)' : ''
-            li.innerHTML = `${swatch(l, m, s)}<span class="name">${l.name}${hidden}</span><span class="pos">${k + 1}</span>`
-            const up = document.createElement('button')
-            up.type = 'button'
-            up.textContent = '↑'
-            up.title = 'Bring forward'
-            up.disabled = k === 0
-            up.onclick = (e) => { e.stopPropagation(); selected = id; move(1) }
-            const down = document.createElement('button')
-            down.type = 'button'
-            down.textContent = '↓'
-            down.title = 'Send backward'
-            down.disabled = k === ids.length - 1
-            down.onclick = (e) => { e.stopPropagation(); selected = id; move(-1) }
-            li.append(up, down)
-            li.onclick = () => { selected = id === selected ? null : id; render() }
-            li.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click() } }
-            return li
-          }),
-      )
-      const i = selected ? ids.indexOf(selected) : -1
-      $('to-front').disabled = $('forward').disabled = i < 0 || i === ids.length - 1
-      $('to-back').disabled = $('backward').disabled = i < 1
-      $('reset-order').hidden = !config.icons?.[current]?.order
-    }
-
-    function renderControls() {
-      const s = resolve(config, current)
-      const mine = config.icons?.[current] ?? {}
-      for (const input of document.querySelectorAll('[data-part]')) {
-        const { part, key } = input.dataset
-        const v = s[part][key]
-        if (input.type === 'checkbox') input.checked = v
-        else input.value = v
-        const label = document.querySelector(`label[for="${input.id}"]`) ?? input.closest('label')
-        label?.classList.toggle('own', scope === 'icon' && mine[part]?.[key] !== undefined)
+      if (e.button !== 0) return
+      const frame = e.target.closest('.frame')
+      const shape = e.target.closest('.art [data-layer]')
+      if (frame) {
+        if (frame.dataset.icon !== current) { current = frame.dataset.icon; selected = null }
+        selected = shape ? shape.dataset.layer : null
+      } else selected = null
+      render()
+    })
+    viewport.addEventListener('pointermove', (e) => {
+      if (drag && e.pointerId === drag.id) {
+        cam.x = drag.cx + e.clientX - drag.x
+        cam.y = drag.cy + e.clientY - drag.y
+        applyCam()
+        return
       }
-      for (const o of document.querySelectorAll('aside output')) {
-        const id = o.getAttribute('for')
-        const v = +$(id).value
-        o.value = id === 'veins-length' ? '×' + v.toFixed(2) : id.endsWith('width') ? String(v) : (v > 0 ? '+' : '') + v
+      if (handActive()) return
+      const shape = e.target.closest('.art [data-layer]')
+      const next = shape ? { icon: shape.closest('.frame').dataset.icon, layer: shape.dataset.layer } : null
+      if (next?.icon !== hover?.icon || next?.layer !== hover?.layer) {
+        const prev = hover
+        hover = next
+        if (prev) drawOverlay(prev.icon)
+        if (next) drawOverlay(next.icon)
       }
-      $('veins-color').disabled = $('veins-match').checked
-      $('scope-all').setAttribute('aria-pressed', String(scope === 'all'))
-      $('scope-icon').setAttribute('aria-pressed', String(scope === 'icon'))
-      const n = Object.keys(config.icons ?? {}).filter((id) => config.icons[id].stem || config.icons[id].veins).length
-      const note = $('scope-note')
-      if (scope === 'all') note.textContent = n ? `Changes apply to every icon except where ${n === 1 ? 'one icon has' : n + ' icons have'} its own value.` : 'Changes apply to every icon.'
-      else {
-        note.textContent = `Changes apply to ${current} only. `
-        if (mine.stem || mine.veins) {
-          const clear = document.createElement('button')
-          clear.type = 'button'
-          clear.textContent = 'Use the shared settings'
-          clear.onclick = () => { delete own().stem; delete own().veins; tidy(); changed() }
-          note.append(clear)
+    })
+    const endDrag = (e) => {
+      if (!drag || e.pointerId !== drag.id) return
+      drag = null
+      viewport.classList.remove('panning')
+    }
+    viewport.addEventListener('pointerup', endDrag)
+    viewport.addEventListener('pointercancel', endDrag)
+    viewport.addEventListener('pointerleave', () => { if (hover) { const h = hover; hover = null; drawOverlay(h.icon) } })
+    viewport.addEventListener('contextmenu', (e) => {
+      const shape = e.target.closest('.art [data-layer]')
+      if (!shape) return
+      e.preventDefault()
+      current = shape.closest('.frame').dataset.icon
+      selected = shape.dataset.layer
+      render()
+      openMenu(layerMenu(), e.clientX, e.clientY)
+    })
+
+    // Pinch to zoom on touch screens.
+    const touches = new Map()
+    let pinch = null
+    viewport.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touches.set(e.pointerId, e) })
+    viewport.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return
+      touches.set(e.pointerId, e)
+      if (touches.size !== 2) { pinch = null; return }
+      const [a, b] = [...touches.values()]
+      const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+      const v = viewport.getBoundingClientRect()
+      const cx = (a.clientX + b.clientX) / 2 - v.left, cy = (a.clientY + b.clientY) / 2 - v.top
+      if (pinch) { zoomBy(d / pinch.d, cx, cy); cam.x += cx - pinch.cx; cam.y += cy - pinch.cy; applyCam() }
+      pinch = { d, cx, cy }
+    })
+    const dropTouch = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null }
+    viewport.addEventListener('pointerup', dropTouch)
+    viewport.addEventListener('pointercancel', dropTouch)
+
+    function drawArt(id) {
+      frames[id].querySelector('.art').innerHTML = renderSvg(model(id), config)
+    }
+
+    function drawOverlay(id) {
+      const f = frames[id]
+      const overlay = f.querySelector('.overlay')
+      overlay.replaceChildren()
+      f.querySelector('.dims')?.remove()
+      const art = f.querySelector('.art svg')
+      const outline = (layerId, cls) => {
+        const el = art.querySelector(`[data-layer="${layerId}"]`)
+        if (!el) return null
+        const c = el.cloneNode(true)
+        c.removeAttribute('data-layer')
+        c.setAttribute('class', cls)
+        overlay.append(c)
+        return el
+      }
+      if (hover?.icon === id && !(id === current && hover.layer === selected)) outline(hover.layer, 'hov')
+      if (id === current && selected) {
+        const el = outline(selected, 'sel')
+        if (el) {
+          const b = el.getBBox()
+          const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          for (const [k, v] of Object.entries({ x: b.x, y: b.y, width: b.width, height: b.height, class: 'box' })) r.setAttribute(k, v)
+          overlay.append(r)
+          const dims = document.createElement('div')
+          dims.className = 'dims'
+          dims.style.left = b.x + b.width / 2 + 'px'
+          dims.style.top = b.y + b.height + 'px'
+          dims.textContent = `${+b.width.toFixed(1)} × ${+b.height.toFixed(1)}`
+          f.append(dims)
         }
       }
     }
 
-    function render() {
-      renderNav()
-      renderCanvas()
-      renderLayers()
-      renderControls()
-      $('json').textContent = JSON.stringify(config, null, 2)
+    // ── Panels ──
+
+    function iconRow(m) {
+      const b = document.createElement('div')
+      b.className = 'row'
+      b.setAttribute('role', 'option')
+      b.tabIndex = 0
+      b.setAttribute('aria-current', String(m.id === current))
+      b.setAttribute('aria-selected', String(m.id === current))
+      b.innerHTML = `<span class="thumb">${renderSvg(m, config)}</span><span class="name">${m.id}</span>${hasOwn(m.id) ? '<span class="badge" title="Has its own settings"></span>' : ''}`
+      b.onclick = () => { current = m.id; selected = null; render(); fit(frameRect(m.id)) }
+      b.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click() } }
+      return b
     }
 
-    // ── Saving: shared store when the page has one, else this browser ──
+    let dragLayer = null
+    function renderLayers() {
+      const m = model()
+      const byId = Object.fromEntries(m.layers.map((l) => [l.id, l]))
+      const front = order(m, config).slice().reverse()
+      const list = $('layer-list')
+      list.replaceChildren(
+        ...front.map((id) => {
+          const l = byId[id]
+          const off = isHidden(current, l)
+          const li = document.createElement('li')
+          li.className = 'row' + (off ? ' off' : '')
+          li.tabIndex = 0
+          li.draggable = true
+          li.dataset.layer = id
+          li.setAttribute('aria-selected', String(id === selected))
+          const icon = l.type === 'veins' || l.type === 'needles' ? 'i-group' : 'i-path'
+          li.innerHTML = `<svg class="i"><use href="#${icon}"/></svg><span class="name">${l.name}</span><button class="eye" type="button" title="${off ? 'Show' : 'Hide'}"><svg class="i"><use href="#${off ? 'i-eye-off' : 'i-eye'}"/></svg></button>`
+          li.querySelector('.eye').onclick = (e) => { e.stopPropagation(); toggleHidden(id) }
+          li.onclick = () => { selected = id; render() }
+          li.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click() } }
+          li.oncontextmenu = (e) => { e.preventDefault(); selected = id; render(); openMenu(layerMenu(), e.clientX, e.clientY) }
+          li.onpointerenter = () => { hover = { icon: current, layer: id }; drawOverlay(current) }
+          li.onpointerleave = () => { hover = null; drawOverlay(current) }
+          li.ondragstart = (e) => { dragLayer = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id) }
+          li.ondragover = (e) => {
+            if (!dragLayer || dragLayer === id) return
+            e.preventDefault()
+            const r = li.getBoundingClientRect()
+            const after = e.clientY > r.top + r.height / 2
+            li.classList.toggle('drop-before', !after)
+            li.classList.toggle('drop-after', after)
+          }
+          li.ondragleave = () => li.classList.remove('drop-before', 'drop-after')
+          li.ondrop = (e) => {
+            e.preventDefault()
+            const after = li.classList.contains('drop-after')
+            li.classList.remove('drop-before', 'drop-after')
+            const moving = dragLayer
+            dragLayer = null
+            if (!moving || moving === id) return
+            mutate(() => {
+              const f = order(model(), config).slice().reverse().filter((x) => x !== moving)
+              f.splice(f.indexOf(id) + (after ? 1 : 0), 0, moving)
+              own().order = f.reverse()
+            })
+          }
+          li.ondragend = () => { dragLayer = null }
+          return li
+        }),
+      )
+    }
+
+    function renderLayerSection() {
+      const layer = selected && model().layers.find((l) => l.id === selected)
+      $('sec-layer').hidden = !layer
+      if (!layer) return
+      const ids = order(model(), config)
+      const i = ids.indexOf(selected)
+      $('layer-name').textContent = layer.name
+      $('layer-kind').textContent = KINDS[layer.type]
+      $('layer-icon').innerHTML = `<use href="#${layer.type === 'veins' || layer.type === 'needles' ? 'i-group' : 'i-path'}"/>`
+      const off = isHidden(current, layer)
+      $('layer-eye').innerHTML = `<svg class="i"><use href="#${off ? 'i-eye-off' : 'i-eye'}"/></svg>`
+      $('layer-eye').title = (off ? 'Show' : 'Hide') + ' layer (⇧⌘H)'
+      $('to-front').disabled = $('forward').disabled = i === ids.length - 1
+      $('to-back').disabled = $('backward').disabled = i === 0
+    }
+
+    const fmt = (key, v) => +(+v).toFixed(2)
+    function renderFields() {
+      const s = scope === 'all' ? { stem: config.stem, veins: config.veins } : resolve(config, current)
+      const mine = config.icons?.[current] ?? {}
+      for (const field of document.querySelectorAll('.field[data-part]')) {
+        const { part, key, kind } = field.dataset
+        const v = s[part][key]
+        if (kind === 'color') {
+          const hex = field.querySelector('.hex')
+          if (document.activeElement !== hex) hex.value = v.replace('#', '').toUpperCase()
+          field.querySelector('.swatch').style.background = v
+          field.querySelector('input[type=color]').value = v
+        } else {
+          const input = field.querySelector('input')
+          if (document.activeElement !== input) input.value = fmt(key, v)
+        }
+        field.classList.toggle('own', scope === 'icon' && mine[part]?.[key] !== undefined)
+        const shadowed = scope === 'all' && mine[part]?.[key] !== undefined
+        field.classList.toggle('shadowed', shadowed)
+        field.title = field.title.split(' (')[0] + (shadowed ? ` (${current} has its own value)` : '')
+        if (part === 'veins') field.classList.toggle('off', !s.veins.show)
+      }
+      const veinsOff = !s.veins.show
+      $('veins-eye').innerHTML = `<svg class="i"><use href="#${veinsOff ? 'i-eye-off' : 'i-eye'}"/></svg>`
+      $('veins-eye').title = veinsOff ? 'Show veins' : 'Hide veins'
+      $('veins-link').setAttribute('aria-pressed', String(linked))
+      document.querySelector('.field[data-part="veins"][data-key="color"]').classList.toggle('off', linked || veinsOff)
+      $('reset-stem').hidden = !(scope === 'icon' && mine.stem)
+      $('reset-veins').hidden = !(scope === 'icon' && mine.veins)
+      $('scope-all').setAttribute('aria-pressed', String(scope === 'all'))
+      $('scope-icon').setAttribute('aria-pressed', String(scope === 'icon'))
+      $('scope-icon').textContent = 'Only ' + current
+      const n = Object.values(config.icons ?? {}).filter((o) => o.stem || o.veins).length
+      $('scope-note').textContent =
+        scope === 'all'
+          ? n ? `Every icon, except values an icon sets itself (${n} ${n === 1 ? 'icon does' : 'icons do'}).` : 'Every icon.'
+          : `Values here override the shared ones for ${current}.`
+    }
+
+    function renderCode() {
+      $('code-svg-name').textContent = current + '.svg'
+      $('code-svg').textContent = renderSvg(model(), config)
+      $('code-config').textContent = JSON.stringify(config, null, 2)
+    }
+
+    function render() {
+      for (const m of MODELS) {
+        drawArt(m.id)
+        frames[m.id].classList.toggle('current', m.id === current)
+      }
+      for (const m of MODELS) drawOverlay(m.id)
+      if (selected && !model().layers.some((l) => l.id === selected)) selected = null
+      $('icon-list').replaceChildren(...MODELS.map(iconRow))
+      $('icon-count').textContent = MODELS.length
+      $('doc-icon').textContent = current
+      renderLayers()
+      renderLayerSection()
+      renderFields()
+      renderCode()
+      $('undo').disabled = !past.length
+      $('redo').disabled = !future.length
+    }
+
+    // ── Fields: type, arrow keys, or drag the label ──
+
+    const STEPS = { 'stem.width': [0.1, 0.5, 20], 'stem.length': [0.5, -40, 20], 'stem.midrib': [0.5, -60, 40], 'veins.width': [0.1, 0.3, 14], 'veins.length': [0.01, 0.1, 2] }
+    const clampField = (part, key, v) => { const [, lo, hi] = STEPS[part + '.' + key]; return Math.min(hi, Math.max(lo, v)) }
+    const shown = (part, key) => (scope === 'all' ? config[part][key] : resolve(config, current)[part][key])
+    function setNumber(part, key, v, gesture) {
+      const [step] = STEPS[part + '.' + key]
+      const value = +clampField(part, key, Math.round(v / step) * step).toFixed(2)
+      mutate(() => setValue(part, key, value), gesture)
+    }
+    function setColor(part, value) {
+      mutate(() => {
+        setValue(part, 'color', value)
+        if (part === 'stem' && linked) setValue('veins', 'color', value)
+      }, 'color:' + part)
+    }
+
+    for (const field of document.querySelectorAll('.field[data-part]')) {
+      const { part, key, kind } = field.dataset
+      if (kind === 'color') {
+        field.querySelector('input[type=color]').addEventListener('input', (e) => setColor(part, e.target.value))
+        const hex = field.querySelector('.hex')
+        const commit = () => {
+          const m = hex.value.trim().replace(/^#/, '').match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i)
+          if (!m) { renderFields(); return }
+          const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
+          setColor(part, '#' + h.toLowerCase())
+        }
+        hex.addEventListener('change', commit)
+        hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); hex.blur() } if (e.key === 'Escape') { renderFields(); hex.blur() } })
+        continue
+      }
+      const input = field.querySelector('input')
+      const [step] = STEPS[part + '.' + key]
+      input.addEventListener('change', () => {
+        const v = parseFloat(input.value)
+        if (Number.isFinite(v)) setNumber(part, key, v)
+        else renderFields()
+      })
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          setNumber(part, key, shown(part, key) + (e.key === 'ArrowUp' ? 1 : -1) * step * (e.shiftKey ? 10 : 1), 'key:' + part + key)
+          input.value = fmt(key, shown(part, key))
+        }
+        if (e.key === 'Enter') input.blur()
+        if (e.key === 'Escape') { renderFields(); input.blur() }
+      })
+      input.addEventListener('focus', () => input.select())
+      const label = field.querySelector('.fl')
+      label.addEventListener('pointerdown', (e) => {
+        e.preventDefault()
+        label.setPointerCapture(e.pointerId)
+        const start = { x: e.clientX, v: shown(part, key) }
+        const gesture = 'scrub:' + part + key + ':' + Date.now()
+        const move = (ev) => {
+          const per = key === 'length' && part === 'veins' ? 0.005 : step
+          setNumber(part, key, start.v + (ev.clientX - start.x) * per * (ev.shiftKey ? 10 : 1), gesture)
+        }
+        const up = () => { label.removeEventListener('pointermove', move); label.removeEventListener('pointerup', up); label.removeEventListener('pointercancel', up) }
+        label.addEventListener('pointermove', move)
+        label.addEventListener('pointerup', up)
+        label.addEventListener('pointercancel', up)
+      })
+    }
+
+    $('veins-link').onclick = () => {
+      linked = !linked
+      if (linked) mutate(() => setValue('veins', 'color', shown('stem', 'color')))
+      else render()
+    }
+    $('veins-eye').onclick = () => mutate(() => setValue('veins', 'show', !shown('veins', 'show')))
+    $('reset-stem').onclick = () => mutate(() => { delete own().stem })
+    $('reset-veins').onclick = () => mutate(() => { delete own().veins })
+    $('scope-all').onclick = () => { scope = 'all'; render() }
+    $('scope-icon').onclick = () => { scope = 'icon'; render() }
+    $('layer-eye').onclick = () => toggleHidden()
+    $('to-front').onclick = () => arrange('front')
+    $('forward').onclick = () => arrange(1)
+    $('backward').onclick = () => arrange(-1)
+    $('to-back').onclick = () => arrange('back')
+    $('tool-move').onclick = () => setTool('move')
+    $('tool-hand').onclick = () => setTool('hand')
+    $('undo').onclick = undo
+    $('redo').onclick = redo
+    for (const t of ['design', 'code']) {
+      $('tab-' + t).onclick = () => {
+        for (const u of ['design', 'code']) {
+          $('tab-' + u).setAttribute('aria-selected', String(u === t))
+          $('pane-' + u).hidden = u !== t
+        }
+      }
+    }
+
+    // ── Menus ──
+
+    const mod = isMac ? '⌘' : 'Ctrl+'
+    const shiftMod = isMac ? '⇧⌘' : 'Ctrl+Shift+'
+    function layerMenu() {
+      const layer = model().layers.find((l) => l.id === selected)
+      const ids = order(model(), config)
+      const i = ids.indexOf(selected)
+      return [
+        { label: 'Bring to front', keys: ']', run: () => arrange('front'), disabled: i === ids.length - 1 },
+        { label: 'Bring forward', keys: mod + ']', run: () => arrange(1), disabled: i === ids.length - 1 },
+        { label: 'Send backward', keys: mod + '[', run: () => arrange(-1), disabled: i === 0 },
+        { label: 'Send to back', keys: '[', run: () => arrange('back'), disabled: i === 0 },
+        '-',
+        { label: isHidden(current, layer) ? 'Show' : 'Hide', keys: shiftMod + 'H', run: () => toggleHidden() },
+        { label: 'Reset layer order', run: () => mutate(() => { delete own().order }), disabled: !config.icons?.[current]?.order },
+      ]
+    }
+    let resetArmed = false
+    function mainMenu() {
+      return [
+        { label: 'Undo', keys: mod + 'Z', run: undo, disabled: !past.length },
+        { label: 'Redo', keys: shiftMod + 'Z', run: redo, disabled: !future.length },
+        '-',
+        { label: (viewport.classList.contains('grid') ? 'Hide' : 'Show') + ' layout grid', keys: '⇧G', run: () => viewport.classList.toggle('grid') },
+        { label: 'Export ' + current + '.svg', run: exportSvg },
+        { label: 'Copy settings', run: () => copy(JSON.stringify(config, null, 2) + '\n', 'Settings copied') },
+        '-',
+        { label: `Reset ${current}`, run: () => mutate(() => { delete config.icons?.[current] }), disabled: !hasOwn(current) },
+        { label: resetArmed ? 'Click again to reset everything' : 'Reset all icons', keep: !resetArmed, run: () => {
+          if (!resetArmed) { resetArmed = true; openMenu(mainMenu(), menuAt.x, menuAt.y); setTimeout(() => (resetArmed = false), 3000); return }
+          resetArmed = false
+          mutate(() => { config = clone(DEFAULTS) })
+          toast('Reset to the saved defaults')
+        } },
+      ]
+    }
+    function zoomMenu() {
+      return [
+        { label: 'Zoom in', keys: mod + '+', run: () => zoomBy(1.5) },
+        { label: 'Zoom out', keys: mod + '−', run: () => zoomBy(1 / 1.5) },
+        '-',
+        { label: 'Zoom to fit all', keys: '⇧1', run: () => fit(allRect()) },
+        { label: 'Zoom to ' + current, keys: '⇧2', run: () => fit(frameRect(current)) },
+        { label: 'Zoom to 100%', keys: '⇧0', run: () => zoomTo(1) },
+      ]
+    }
+    const menu = $('menu')
+    let menuAt = { x: 0, y: 0 }
+    function openMenu(items, x, y) {
+      menuAt = { x, y }
+      menu.replaceChildren(
+        ...items.map((it) => {
+          if (it === '-') return document.createElement('hr')
+          const b = document.createElement('button')
+          b.type = 'button'
+          b.setAttribute('role', 'menuitem')
+          b.disabled = !!it.disabled
+          b.innerHTML = `<span></span>${it.keys ? `<kbd>${it.keys}</kbd>` : ''}`
+          b.firstChild.textContent = it.label
+          b.onclick = () => { if (!it.keep) closeMenu(); it.run() }
+          return b
+        }),
+      )
+      menu.hidden = false
+      const r = menu.getBoundingClientRect()
+      menu.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px'
+      menu.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px'
+      menu.querySelector('button:not(:disabled)')?.focus()
+    }
+    function closeMenu() { menu.hidden = true }
+    const below = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.bottom + 4] }
+    $('main-menu').onclick = (e) => { e.stopPropagation(); menu.hidden ? openMenu(mainMenu(), ...below(e.currentTarget)) : closeMenu() }
+    $('zoom').onclick = (e) => { e.stopPropagation(); menu.hidden ? openMenu(zoomMenu(), ...below(e.currentTarget)) : closeMenu() }
+    document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !menu.contains(e.target) && !e.target.closest('#main-menu, #zoom')) closeMenu() })
+    menu.addEventListener('keydown', (e) => {
+      const items = [...menu.querySelectorAll('button:not(:disabled)')]
+      const i = items.indexOf(document.activeElement)
+      if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length]?.focus() }
+      if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length]?.focus() }
+    })
+
+    // ── Export ──
+
+    let toastTimer
+    function toast(text) {
+      const t = $('toast')
+      t.textContent = text
+      t.hidden = false
+      clearTimeout(toastTimer)
+      toastTimer = setTimeout(() => (t.hidden = true), 1800)
+    }
+    async function copy(text, done) {
+      try { await navigator.clipboard.writeText(text); toast(done) }
+      catch {
+        $('tab-code').click()
+        getSelection().selectAllChildren(text.startsWith('<svg') ? $('code-svg') : $('code-config'))
+        toast('Selected in the Code tab: press ' + mod + 'C')
+      }
+    }
+    let downloads
+    async function exportSvg() {
+      const filename = current + '.svg'
+      const data = renderSvg(model(), config)
+      downloads ??= window.claude?.use ? await window.claude.use('downloads').catch(() => null) : null
+      if (downloads) {
+        try { await downloads.save({ filename, data }); toast('Exported ' + filename) }
+        catch (e) { if (e?.code !== 'declined') toast('Could not export. Use Copy SVG instead.') }
+        return
+      }
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([data], { type: 'image/svg+xml' }))
+      a.download = filename
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+      toast('Exported ' + filename)
+    }
+    $('export').onclick = exportSvg
+    $('export-top').onclick = exportSvg
+    $('copy-svg').onclick = $('copy-svg-2').onclick = () => copy(renderSvg(model(), config), 'SVG copied')
+    $('copy-config').onclick = $('copy-config-2').onclick = () => copy(JSON.stringify(config, null, 2) + '\n', 'Settings copied')
+
+    // ── Keyboard ──
+
+    document.addEventListener('keydown', (e) => {
+      const typing = e.target.closest('input, textarea, [contenteditable]')
+      const m = e.metaKey || e.ctrlKey
+      if (e.key === 'Escape') {
+        if (!menu.hidden) { closeMenu(); return }
+        if (typing) return
+        if (selected) { selected = null; render() }
+        return
+      }
+      if (typing) return
+      if (e.code === 'Space' && !e.repeat && !e.target.closest('button, [tabindex]')) { spaceHeld = true; viewport.classList.add('hand'); e.preventDefault(); return }
+      let handled = true
+      if (m && e.code === 'KeyZ') e.shiftKey ? redo() : undo()
+      else if (m && e.code === 'KeyY') redo()
+      else if (m && e.shiftKey && e.code === 'KeyH') toggleHidden()
+      else if (m && e.code === 'BracketRight') arrange(1)
+      else if (m && e.code === 'BracketLeft') arrange(-1)
+      else if (m && (e.code === 'Equal' || e.code === 'NumpadAdd')) zoomBy(1.5)
+      else if (m && (e.code === 'Minus' || e.code === 'NumpadSubtract')) zoomBy(1 / 1.5)
+      else if (m) handled = false
+      else if (e.code === 'BracketRight') arrange('front')
+      else if (e.code === 'BracketLeft') arrange('back')
+      else if (e.shiftKey && e.code === 'Digit1') fit(allRect())
+      else if (e.shiftKey && e.code === 'Digit2') fit(frameRect(current))
+      else if (e.shiftKey && e.code === 'Digit0') zoomTo(1)
+      else if (e.shiftKey && e.code === 'KeyG') viewport.classList.toggle('grid')
+      else if (!e.shiftKey && e.code === 'KeyV') setTool('move')
+      else if (!e.shiftKey && e.code === 'KeyH') setTool('hand')
+      else handled = false
+      if (handled) e.preventDefault()
+    })
+    document.addEventListener('keyup', (e) => { if (e.code === 'Space') { spaceHeld = false; viewport.classList.toggle('hand', handActive()) } })
+
+    // ── Saving: the page's shared store when it has one, else this browser ──
 
     let ref = null
     let saveTimer = null
@@ -359,7 +1026,6 @@
       status('Saving…')
       saveTimer = setTimeout(save, 500)
     }
-
     async function save() {
       saveTimer = null
       if (!ref) {
@@ -372,23 +1038,19 @@
       catch (e) { status(e?.code === 'unauthenticated' ? 'Sign in to save' : 'View only: changes are not saved') }
       finally { saving = false }
     }
-
     function adopt(saved) {
       if (!saved?.stem || !saved?.veins) return
       config = { ...clone(DEFAULTS), ...clone(saved) }
-      if (selected && !model().layers.some((l) => l.id === selected)) selected = null
-      $('veins-match').checked = resolve(config, current).veins.color === resolve(config, current).stem.color
+      linked = resolve(config, current).veins.color === resolve(config, current).stem.color
       render()
     }
-
     function loadLocal() {
       try { const s = localStorage.getItem(LOCAL_KEY); if (s) adopt(JSON.parse(s)) } catch {}
     }
-
     async function connect() {
       const pending = window.claude?.use?.('db')
       const db = pending ? await pending.catch(() => null) : null
-      if (!db) { status(''); return }
+      if (!db) return
       ref = db.doc('settings/current')
       ref.onSnapshot(
         (snap) => {
@@ -400,76 +1062,10 @@
       )
     }
 
-    // ── Controls ──
-
-    for (const input of document.querySelectorAll('[data-part]')) {
-      input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', () => {
-        const { part, key } = input.dataset
-        const v = input.type === 'checkbox' ? input.checked : input.type === 'range' ? +input.value : input.value
-        setValue(part, key, v)
-        if (part === 'stem' && key === 'color' && $('veins-match').checked) setValue('veins', 'color', v)
-        changed()
-      })
-    }
-    $('veins-match').onchange = (e) => {
-      if (e.target.checked) { setValue('veins', 'color', resolve(config, current).stem.color); changed() } else render()
-    }
-    $('scope-all').onclick = () => { scope = 'all'; render() }
-    $('scope-icon').onclick = () => { scope = 'icon'; render() }
-
-    $('canvas').addEventListener('click', (e) => {
-      const el = e.target.closest('[data-layer]')
-      selected = el ? el.dataset.layer : null
-      render()
-    })
-    $('to-front').onclick = () => move('front')
-    $('forward').onclick = () => move(1)
-    $('backward').onclick = () => move(-1)
-    $('to-back').onclick = () => move('back')
-    $('reset-order').onclick = () => { delete own().order; tidy(); changed() }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.target.closest('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === ']') move(1)
-      else if (e.key === '[') move(-1)
-      else if (e.key === '}') move('front')
-      else if (e.key === '{') move('back')
-      else if (e.key === 'Escape' && selected) { selected = null; render() }
-      else return
-      e.preventDefault()
-    })
-
-    async function copy(button, text, label) {
-      try { await navigator.clipboard.writeText(text); button.textContent = 'Copied' }
-      catch {
-        $('json').textContent = text
-        $('json').closest('details').open = true
-        getSelection().selectAllChildren($('json'))
-        button.textContent = 'Selected below: press ⌘C'
-      }
-      setTimeout(() => { button.textContent = label; $('json').textContent = JSON.stringify(config, null, 2) }, 2500)
-    }
-    $('copy-svg').onclick = (e) => copy(e.currentTarget, renderSvg(model(), config), 'Copy SVG')
-    $('copy-config').onclick = (e) => copy(e.currentTarget, JSON.stringify(config, null, 2) + '\n', 'Copy settings')
-
-    let resetArmed = null
-    $('reset-all').onclick = (e) => {
-      const b = e.currentTarget
-      if (!resetArmed) {
-        b.textContent = 'Click again to reset everything'
-        resetArmed = setTimeout(() => { resetArmed = null; b.textContent = 'Reset all' }, 3000)
-        return
-      }
-      clearTimeout(resetArmed)
-      resetArmed = null
-      b.textContent = 'Reset all'
-      config = clone(DEFAULTS)
-      selected = null
-      changed()
-    }
-
-    $('veins-match').checked = config.veins.color === config.stem.color
     render()
+    fit(allRect(), false)
+    matchMedia('(max-width: 820px)').addEventListener('change', () => fit(allRect(), false))
+    new ResizeObserver(() => { if (!viewport.dataset.fitted) { viewport.dataset.fitted = '1'; fit(allRect(), false) } }).observe(viewport)
     loadLocal()
     connect()
   </script>

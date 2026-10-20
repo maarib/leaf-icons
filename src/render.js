@@ -57,11 +57,16 @@ function layer(l, model, { stem, veins }) {
   }
 }
 
-/** The icon as a standalone SVG document. Classes and data-layer let CSS and the editor find each part. */
+/**
+ * The icon as a standalone SVG document. Classes and data-layer let CSS and the editor find each part.
+ * Layers listed in the icon's `hidden` are left out; veins are hidden with `veins.show` instead.
+ */
 export function renderSvg(model, config) {
   const settings = resolve(config, model.id)
   const byId = Object.fromEntries(model.layers.map((l) => [l.id, l]))
+  const hidden = config.icons?.[model.id]?.hidden ?? []
   const body = order(model, config)
+    .filter((id) => !hidden.includes(id))
     .map((id) => layer(byId[id], model, settings))
     .filter(Boolean)
   return [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="leaf leaf-${model.id}">`, ...body.map((b) => '  ' + b), '</svg>'].join('\n') + '\n'
