@@ -11,5 +11,121 @@
     "color": "#2d3550",
     "length": 1
   },
-  "icons": {}
+  "icons": {
+    "alders": {
+      "stem": {
+        "midrib": -6
+      },
+      "veins": {
+        "length": 0.63
+      }
+    },
+    "ashes": {
+      "stem": {
+        "midrib": -8.5
+      },
+      "veins": {
+        "length": 1.1
+      },
+      "order": [
+        "leaflet-2",
+        "leaflet-5",
+        "leaflet-6",
+        "leaflet-1",
+        "stem",
+        "leaflet-7",
+        "leaflet-4",
+        "leaflet-3"
+      ]
+    },
+    "aspens": {
+      "stem": {
+        "midrib": -7.5
+      },
+      "veins": {
+        "length": 0.67
+      }
+    },
+    "beeches": {
+      "stem": {
+        "width": 4.5
+      },
+      "veins": {
+        "width": 3.4,
+        "length": 0.58
+      }
+    },
+    "birches": {
+      "stem": {
+        "width": 4.2,
+        "color": "#522e33",
+        "length": -8,
+        "midrib": -7.5
+      },
+      "veins": {
+        "color": "#522e33",
+        "length": 0.61
+      }
+    },
+    "cherries": {
+      "order": [
+        "fruit-1",
+        "fruit-2",
+        "stalk-1",
+        "stalk-2",
+        "stalk-3",
+        "leaf"
+      ]
+    },
+    "hickories": {
+      "order": [
+        "leaflet-2",
+        "leaflet-3",
+        "leaflet-4",
+        "leaflet-5",
+        "stem",
+        "leaflet-1"
+      ]
+    },
+    "larches": {
+      "order": [
+        "spur",
+        "needles",
+        "stem"
+      ]
+    },
+    "maples": {
+      "stem": {
+        "width": 5.8,
+        "length": -10.5,
+        "midrib": -10
+      },
+      "veins": {
+        "width": 5,
+        "length": 0.61
+      }
+    },
+    "oaks": {
+      "stem": {
+        "midrib": -13
+      },
+      "veins": {
+        "length": 0.37
+      }
+    },
+    "shrubs": {
+      "order": [
+        "leaflet-2",
+        "leaflet-5",
+        "leaflet-6",
+        "leaflet-9",
+        "stem",
+        "leaflet-8",
+        "leaflet-1",
+        "leaflet-7",
+        "leaflet-4",
+        "leaflet-3"
+      ]
+    }
+  }
 }
