@@ -31,6 +31,9 @@ jobs:
           mkdir -p _site
           cp editor.html _site/index.html
           cp -r icons stems.config.json _site/
+          mkdir -p _site/app
+          cp app/*.png _site/app/
+          cp app/manifest.webmanifest app/sw.js _site/
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:

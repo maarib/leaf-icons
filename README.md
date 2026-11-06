@@ -6,6 +6,16 @@ Thirteen tree-group leaf icons (maples, oaks, birches, …) on a 100×100 grid, 
 
 ![The editor: icons and layers on the left, every icon as a frame on the canvas, stem and vein settings on the right](docs/editor.png)
 
+## Install as an app
+
+The editor installs as an app: its own window and Dock icon, and it works offline once opened.
+
+- **Chrome or Edge:** open the editor, then click the install icon at the right of the address bar (or ⋮ → Cast, save and share → Install page as app).
+- **Safari (Mac):** File → Add to Dock.
+- **iPhone or iPad:** Share → Add to Home Screen.
+
+It updates itself: the next launch after a push to main loads the new version. The app and the site share the same saved edits.
+
 ## The editor
 
 - **Icons and layers** (left). Pick an icon to zoom to it. Each leaf, leaflet, fruit, needle tuft, vein group and stem is a layer: drag rows to reorder them, or use the eye to hide one.
@@ -65,6 +75,7 @@ Node 22.18 or later, no dependencies. It writes `icons/<id>.svg` and `editor.htm
 | `src/render.js` | Draws one icon as SVG from its layers and the settings. The build and the editor both use it, so the editor shows exactly what the build writes |
 | `scripts/build.ts` | Turns the shapes into named layers, writes the SVGs, and puts the editor together from `scripts/editor.template.html` |
 | `icons/` | The built SVGs |
+| `app/` | What makes the editor installable: the manifest, the offline worker (`sw.js`) and the app icons. Redraw the icons with `node scripts/app-icons.mjs` (needs Playwright) |
 
 A stroke's width is `k × width` for its part, so strokes drawn thinner (maple's lower veins, the cherry stalks) keep their proportions. The cherry stalks join fixed points, so their width follows the stem setting but their length does not.
 
